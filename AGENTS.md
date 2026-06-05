@@ -6,6 +6,11 @@ Testing principles are located in `docs/TESTING.md`
 Execution principles (relevant when changing production code) are located in `docs/EXECUTION.md`
 Programming language specific rules are located in `docs/languages/*.md`
 
+YOU ALWAYS FOLLOW THE FOLLOWING SKILL-CHAIN. **None** of these steps can be skipped, or combined unless explicitly stated by the user:
+```
+/plan-feature OR /rearchitect ──> /scheme ──> /execute ──> /review ──> /finish                                                                                                                                                                                    
+```
+
 # Operating Principles (Non-Negotiable)
 - **Less is better**: Reducing lines of code instead of adding them is a virtue.
 - **Remove is better than add**: NEVER add if you can modify or delete instead. LESS code is an indicator for BETTER quality.

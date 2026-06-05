@@ -18,7 +18,7 @@ A [deep module](../../../docs/EXECUTION.md#deep-modules) has a small interface h
 
 ### 1. Explore the codebase
 
-Generate 3 fresh **parallel** subagents to navigate the codebase naturally. Do NOT follow rigid heuristics — explore organically and note where you experience friction:
+Have three **parallel** explorer navigate the codebase naturally. They should NOT follow rigid heuristics — explore organically and note where you experience friction:
 
 - Where does understanding one concept require bouncing between many small files?
 - Where are modules so shallow that the interface is nearly as complex as the implementation?
@@ -30,7 +30,7 @@ The friction you encounter IS the signal.
 
 ### 2. Present candidates
 
-Given the exploration results, start three new **parallel** subagents each of which should generate a numbered list of at least 5 deepening opportunities. For each candidate, show:
+Given the exploration results, have three new fullstack_developer each generate a numbered list of at least 5 deepening opportunities in **parallel**. For each candidate, show:
 
 - **Cluster**: Which modules/concepts are involved
 - **Why they're coupled**: Shared types, call patterns, co-ownership of a concept
@@ -40,23 +40,23 @@ Given the exploration results, start three new **parallel** subagents each of wh
 Do NOT propose interfaces yet. 
 
 ### 3. Unify deepening candidates
-Compare the three lists and find clusters that appear across multiple agents. Generate a list of 3-5 unified candidates that combine similar suggestions. Ask the user: "Which of these would you like to explore?"
+Compare the three lists and find clusters that appear across multiple fullstack_developer. Generate a list of 3 unified candidates that combine similar suggestions. Ask the user: "Which of these would you like to explore?"
 
 ### 4. User picks a candidate
 
 ### 5. Frame the problem space
 
-Before spawning sub-agents, write a user-facing explanation of the problem space for the chosen candidate:
+Write a user-facing explanation of the problem space for the chosen candidate:
 
 - The constraints any new interface would need to satisfy
 - The dependencies it would need to rely on
 - A rough illustrative code sketch to make the constraints concrete — this is not a proposal, just a way to ground the constraints
 
-Show this to the user, then immediately proceed to Step 5. The user reads and thinks about the problem while the sub-agents work in parallel.
+Show this to the user, then immediately proceed to Step 6. The user reads and thinks about the problem while the sub-agents work in parallel.
 
 ### 6. Design multiple interfaces
 
-Spawn 3+ fullstack_agents **parallel**. Each must produce a **radically different** interface for the deepened module.
+Have 3+ fullstack_developer produce a **radically different** interface for the deepened module **in parallel**.
 
 Prompt each sub-agent with a separate technical brief (file paths, coupling details, dependency category, what's being hidden). This brief is independent of the user-facing explanation in Step 4. Give each agent a different design constraint:
 
@@ -75,9 +75,12 @@ Each sub-agent outputs:
 
 Present designs sequentially, then compare them in prose.
 
-After comparing, give your own recommendation: which design you think is strongest and why. If elements from different designs would combine well, propose a hybrid. Be opinionated — the user wants a strong read, not just a menu. Strongly pefer simplicity over architecture bloat. Strongly prefer locality of functionality over generic flexibility.
+After comparing, give your own recommendation: which design you think is strongest and why. If elements from different designs would combine well, propose a hybrid. Be opinionated — the user wants a strong read, not just a menu. Strongly prefer simplicity over architecture bloat. Strongly prefer locality of functionality over generic flexibility.
 
 ### 7. User picks an interface (or accepts recommendation)
 
 ### 8. Create a spec
 Create a refactor spec in `docs/specs/YYYY-MM-DD-<refactor-description>.md`. Use the EXACT template from [spec-template.md](../plan-feature/spec-template.md). Only replace placeholders.
+
+### 9. Spec review 
+Have the spec reviewed by business_analyst to ensure alignment with the user interview and decisions

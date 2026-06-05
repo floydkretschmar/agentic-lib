@@ -42,11 +42,11 @@ Summarize findings in a consolidated report with actionable feedback and automat
 
 #### 2a. Spec/Scope Compliance Review
 
-Use a fresh business_analyst_agent with the EXACT prompt in [spec-quality-prompt.md](spec-quality-prompt.md). USE THE EXACT PROMPT WORD FOR WORD. Only replace placeholders.
+Have business_analyst review the spec using the EXACT prompt in [spec-quality-prompt.md](spec-quality-prompt.md). USE THE EXACT PROMPT WORD FOR WORD. Only replace placeholders.
 
 #### 2b. Code Quality / Risk Review
 
-Use a fresh fullstack_agent with the EXACT prompt in [code-quality-prompt.md](code-quality-prompt.md). USE THE EXACT PROMPT WORD FOR WORD. Only replace placeholders.
+Have fullstack_developer review the spec using the EXACT prompt in [code-quality-prompt.md](code-quality-prompt.md). USE THE EXACT PROMPT WORD FOR WORD. Only replace placeholders.
 
 ### Step 3: Consolidate and persist review artifact
 

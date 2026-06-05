@@ -1,6 +1,20 @@
 model = "gpt-5.5"
 model_reasoning_effort = "high"
 
+[features]
+multi_agent_v2 = false
+
+[agents.backend_developer]
+config_file = "~/.codex/agents/backend_developer.toml"
+[agents.business_analyst]
+config_file = "~/.codex/agents/business_analyst.toml"
+[agents.frontend_developer]
+config_file = "~/.codex/agents/frontend_developer.toml"
+[agents.fullstack_developer]
+config_file = "~/.codex/agents/fullstack_developer.toml"
+[agents.qa_engineer]
+config_file = "~/.codex/agents/qa_engineer.toml"
+
 [[hooks.PreToolUse]]
 matcher = "*"
 
