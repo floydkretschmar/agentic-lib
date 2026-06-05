@@ -35,7 +35,7 @@ These go in the plan header so every phase can reference them.
 
 ### 4. Draft vertical slices
 
-Start five separate, PARALLEL subagents to break the spec into **tracer bullet** phases. The five subagents should try and come up with radically different approaches, but all NEED to follow the following rules for breakdown: 
+Start five separate, PARALLEL fullstack_agents to break the spec into **tracer bullet** phases. The five subagents should try and come up with radically different approaches, but all NEED to follow the following rules for breakdown: 
 
 - Each phase is a thin vertical slice that cuts through ALL integration layers end-to-end, NOT a horizontal slice of one layer.
 - INVEST Criteria: Ensure each slice is Independent, Negotiable, Valuable, Estimable, Small, and Testable
@@ -77,22 +77,18 @@ Iterate until the user approves the breakdown.
 
 Write the scheme file `docs/schemes/YYYY-MM-DD-<feature-name>.md` with the EXACT template from [scheme-template.md](scheme-template.md). Only replace placeholders.
 
+### Step 8: Scheme reviews
 
-### Step 8: Staff Engineer Review
-
-Spawn a **fresh subagent** to review the scheme as a staff engineer using the exact prompt in [reviewer-prompt.md](reviewer-prompt.md). Only replace placeholders.
-
-**CORRECT AGENT FOR TASK**:
-1. Frontend work (UI, UX, websites, dashboards, ...) uses frontend_agent
-2. Backend work (API, databases, scheduled jobs, ...) uses backend_agent
-3. For all other work which does not clearly fall in to one category or the other use fullstack_agent
+Spawn two fresh subagents to review the scheme using the exact prompt in [reviewer-prompt.md](reviewer-prompt.md). Only replace placeholders.
+1. Spawn a business_analyst_agent to review spec compliance and slice quality
+2. Spawn a fullstack_agent to review technical soundness
 
 ### Step 9: Incorporate Feedback
 
-If reviewer says NEEDS CHANGES:
+If any reviewer says NEEDS CHANGES:
 1. Use /interview to clarify strategic questions 
 2. Update the scheme -> Strongly prefere edits that shorten or modify existing specifications rather than adding new ones
-3. Re-run reviewer
+3. Re-run reviewers
 4. Repeat until APPROVED
 
 ### Step 10: Create Task Checklist

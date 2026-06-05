@@ -1,0 +1,11 @@
+model = "gpt-5.5"
+model_reasoning_effort = "high"
+
+[[hooks.PreToolUse]]
+matcher = "*"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = '/usr/bin/python3 "$(git rev-parse --show-toplevel)/.codex/hooks/pre_tool_use_policy.py"'
+timeout = 5
+statusMessage = "Dangerous tool-use guard"

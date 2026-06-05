@@ -99,6 +99,11 @@ Step 1: Initialize ──> Step 2: Execute next phase ──> Step 3: Review imp
 
 **For EACH incomplete phase** use a fresh subagent with the EXACT prompt in [execution-prompt.md](execution-prompt.md) to execute the phase using TDD. ONLY replace placeholders, otherwise use the prompt verbatim.
 
+**Chose subagent according to task**:
+- frontend_agent: UI/UX heavy task that are user facing
+- backend_agent: Backend/server heavy task mainly involving system to system interaction
+- fullstack_agent: Tasks that include a mixture of backend and frontend work
+
 **After each subagent completes:**
 
 **If STATUS: DONE**
@@ -127,7 +132,7 @@ ONE phase has been completed invoke the standalone `review` skill for a comprehe
 - If its deemed outside the scope of the spec, proceed to completion output
 
 ### Step 4: Manual testing and commit
-One phases are marked complete, run manual testing for the phase as described in the scheme. Use the chrome-devtools for this step. 
+One phases are marked complete start a new qa_agent to run manual testing for the phase as described in the scheme.
 
 - If manual testing fails: go back to Step 3 and fix the issue with a fresh subagent.
 - If manual testing is successful: commit all changes related to the current phase with a descriptive commit message. If all implementation phases are done: continue to the Step 5 otherwise continue with Step 3 for the next implementation phase

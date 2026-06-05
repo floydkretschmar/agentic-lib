@@ -56,7 +56,7 @@ Show this to the user, then immediately proceed to Step 5. The user reads and th
 
 ### 6. Design multiple interfaces
 
-Spawn 3+ sub-agents in **parallel** using the Agent tool. Each must produce a **radically different** interface for the deepened module.
+Spawn 3+ fullstack_agents **parallel**. Each must produce a **radically different** interface for the deepened module.
 
 Prompt each sub-agent with a separate technical brief (file paths, coupling details, dependency category, what's being hidden). This brief is independent of the user-facing explanation in Step 4. Give each agent a different design constraint:
 
