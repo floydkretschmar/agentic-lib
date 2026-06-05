@@ -16,18 +16,23 @@
 - **Keep tests honest**: Never weaken or simplify a test to make it pass; keep the real failing value in the test and fix the logic at the root.
 - **No contract assertions in tests**: Keep unit and strategy tests focused on public behavior of the module under test.
 
+### Other Conventions
+- Test package paths must mirror main package paths exactly; integration-test grouping must still align with corresponding implementation slice/package.
+- Never add dedicated tests for pure cleanup-only changes such as dead-code removal, catalog pruning, or unused-import deletion when no user-visible behavior changes; verify existing behavior instead of introducing brittle cleanup tests.
+
 ### Good Tests
 
 **Integration-style**: Test through real interfaces, not mocks of internal parts.
 
-```typescript
+```pseudocode
 // GOOD: Tests observable behavior
-test("user can checkout with valid cart", async () => {
-  const cart = createCart();
-  cart.add(product);
-  const result = await checkout(cart, paymentMethod);
-  expect(result.status).toBe("confirmed");
-});
+test "user can checkout with valid cart":
+  cart = create_cart()
+  cart.add(product)
+
+  result = checkout(cart, payment_method)
+
+  assert result.status == "confirmed"
 ```
 
 Characteristics:
@@ -42,13 +47,14 @@ Characteristics:
 
 **Implementation-detail tests**: Coupled to internal structure.
 
-```typescript
+```pseudocode
 // BAD: Tests implementation details
-test("checkout calls paymentService.process", async () => {
-  const mockPayment = jest.mock(paymentService);
-  await checkout(cart, payment);
-  expect(mockPayment.process).toHaveBeenCalledWith(cart.total);
-});
+test "checkout calls payment service process":
+  mock_payment_service = mock(payment_service)
+
+  checkout(cart, payment_method)
+
+  assert mock_payment_service.process_was_called_with(cart.total)
 ```
 
 Red flags:
@@ -60,20 +66,22 @@ Red flags:
 - Test name describes HOW not WHAT
 - Verifying through external means instead of interface
 
-```typescript
+```pseudocode
 // BAD: Bypasses interface to verify
-test("createUser saves to database", async () => {
-  await createUser({ name: "Alice" });
-  const row = await db.query("SELECT * FROM users WHERE name = ?", ["Alice"]);
-  expect(row).toBeDefined();
-});
+test "create user saves to storage":
+  create_user(name: "Alice")
+
+  row = storage.query_user_by_name("Alice")
+
+  assert row exists
 
 // GOOD: Verifies through interface
-test("createUser makes user retrievable", async () => {
-  const user = await createUser({ name: "Alice" });
-  const retrieved = await getUser(user.id);
-  expect(retrieved.name).toBe("Alice");
-});
+test "create user makes user retrievable":
+  user = create_user(name: "Alice")
+
+  retrieved = get_user(user.id)
+
+  assert retrieved.name == "Alice"
 ```
 
 ### When to Mock
@@ -99,35 +107,31 @@ At system boundaries, design interfaces that are easy to mock:
 
 Pass external dependencies in rather than creating them internally:
 
-```typescript
+```pseudocode
 // Easy to mock
-function processPayment(order, paymentClient) {
-  return paymentClient.charge(order.total);
-}
+function process_payment(order, payment_client):
+  return payment_client.charge(order.total)
 
 // Hard to mock
-function processPayment(order) {
-  const client = new StripeClient(process.env.STRIPE_KEY);
-  return client.charge(order.total);
-}
+function process_payment(order):
+  client = create_payment_client_from_environment()
+  return client.charge(order.total)
 ```
 
 **2. Prefer SDK-style interfaces over generic fetchers**
 
 Create specific functions for each external operation instead of one generic function with conditional logic:
 
-```typescript
+```pseudocode
 // GOOD: Each function is independently mockable
-const api = {
-  getUser: (id) => fetch(`/users/${id}`),
-  getOrders: (userId) => fetch(`/users/${userId}/orders`),
-  createOrder: (data) => fetch('/orders', { method: 'POST', body: data }),
-};
+client:
+  get_user(id)
+  get_orders(user_id)
+  create_order(order_data)
 
 // BAD: Mocking requires conditional logic inside the mock
-const api = {
-  fetch: (endpoint, options) => fetch(endpoint, options),
-};
+generic_client:
+  request(operation_name, options)
 ```
 
 The SDK approach means:
@@ -135,7 +139,3 @@ The SDK approach means:
 - No conditional logic in test setup
 - Easier to see which endpoints a test exercises
 - Type safety per endpoint
-
-### Other Conventions
-- Test package paths must mirror main package paths exactly; integration-test grouping must still align with corresponding implementation slice/package.
-- Never add dedicated tests for pure cleanup-only changes such as dead-code removal, catalog pruning, or unused-import deletion when no user-visible behavior changes; verify existing behavior instead of introducing brittle cleanup tests.

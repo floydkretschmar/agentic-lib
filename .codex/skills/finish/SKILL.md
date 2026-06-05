@@ -21,10 +21,9 @@ Run full verification suite:
 
 ```bash
 # Run all checks
-npm test                   # Tests pass
-npm run typecheck          # Types clean (if applicable)
-npm run lint               # Lint clean
-npm run build              # Build succeeds
+./run.sh test              # Tests pass
+./run.sh format            # Formatting is clean
+./run.sh build             # Build succeeds
 ```
 
 **Do NOT proceed if any verification fails.**

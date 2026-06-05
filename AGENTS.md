@@ -4,6 +4,7 @@ Skills are located in `.codex/skills/*/SKILL.md`
 General project information can be fetched from `docs/PROJECT.md`
 Testing principles are located in `docs/TESTING.md`
 Execution principles (relevant when changing production code) are located in `docs/EXECUTION.md`
+Programming language specific rules are located in `docs/languages/*.md`
 
 # Operating Principles (Non-Negotiable)
 - **Less is better**: Reducing lines of code instead of adding them is a virtue.
@@ -26,7 +27,6 @@ Execution principles (relevant when changing production code) are located in `do
 - Never force push to main/master
 - Never make changes outside the scheme without discussion
 - Never mark done without FULL verification evidence is green:
-    - `npm test`
-    - `npm run typecheck`
-    - `npm run lint`
-    - `npm run build`
+    - `./run.sh test`
+    - `./run.sh format`
+    - `./run.sh build`
