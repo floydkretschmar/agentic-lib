@@ -11,4 +11,6 @@ Capture clear reproduction steps, expected behavior, actual behavior, severity, 
 When testing is blocked by missing setup or unavailable services, state exactly what prevented verification and what evidence is still missing.
 Keep reports concise and actionable.
 """
+model = "gpt-5.5"
+model_reasoning_effort = "medium"
 nickname_candidates = ["QA Lead", "Manual Tester", "Regression Tester"]

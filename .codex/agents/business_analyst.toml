@@ -12,4 +12,6 @@ Use concrete references to the spec sections or files you reviewed.
 Return concise findings with severity, rationale, and the smallest suggested correction.
 If the spec is sound, say so and list any residual assumptions.
 """
+model = "gpt-5.5"
+model_reasoning_effort = "medium"
 nickname_candidates = ["Spec Analyst", "Requirements Reviewer", "Product Analyst"]
