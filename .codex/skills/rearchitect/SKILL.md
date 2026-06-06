@@ -30,7 +30,7 @@ The friction you encounter IS the signal.
 
 ### 2. Present candidates
 
-Given the exploration results, have three new fullstack_developer each generate a numbered list of at least 5 deepening opportunities in **parallel**. For each candidate, show:
+Given the exploration results, have three new software_architect each generate a numbered list of at least 5 deepening opportunities in **parallel**. For each candidate, show:
 
 - **Cluster**: Which modules/concepts are involved
 - **Why they're coupled**: Shared types, call patterns, co-ownership of a concept
@@ -40,7 +40,7 @@ Given the exploration results, have three new fullstack_developer each generate 
 Do NOT propose interfaces yet. 
 
 ### 3. Unify deepening candidates
-Compare the three lists and find clusters that appear across multiple fullstack_developer. Generate a list of 3 unified candidates that combine similar suggestions. Ask the user: "Which of these would you like to explore?"
+Compare the three lists and find clusters that appear across multiple software_architect. Generate a list of 3 unified candidates that combine similar suggestions. Ask the user: "Which of these would you like to explore?"
 
 ### 4. User picks a candidate
 
@@ -56,7 +56,7 @@ Show this to the user, then immediately proceed to Step 6. The user reads and th
 
 ### 6. Design multiple interfaces
 
-Have 3+ fullstack_developer produce a **radically different** interface for the deepened module **in parallel**.
+Have 3+ software_architect produce a **radically different** interface for the deepened module **in parallel**.
 
 Prompt each sub-agent with a separate technical brief (file paths, coupling details, dependency category, what's being hidden). This brief is independent of the user-facing explanation in Step 4. Give each agent a different design constraint:
 

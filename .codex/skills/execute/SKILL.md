@@ -102,7 +102,6 @@ Step 1: Initialize ──> Step 2: Execute next phase ──> Step 3: Review imp
 **Chose subagent according to task**:
 - frontend_developer: UI/UX heavy task that are user facing
 - backend_developer: Backend/server heavy task mainly involving system to system interaction
-- fullstack_developer: Tasks that include a mixture of backend and frontend work
 
 **After each subagent completes:**
 

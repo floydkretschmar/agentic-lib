@@ -46,7 +46,7 @@ Have business_analyst review the spec using the EXACT prompt in [spec-quality-pr
 
 #### 2b. Code Quality / Risk Review
 
-Have fullstack_developer review the spec using the EXACT prompt in [code-quality-prompt.md](code-quality-prompt.md). USE THE EXACT PROMPT WORD FOR WORD. Only replace placeholders.
+Have review_developer review the spec using the EXACT prompt in [code-quality-prompt.md](code-quality-prompt.md). USE THE EXACT PROMPT WORD FOR WORD. Only replace placeholders.
 
 ### Step 3: Consolidate and persist review artifact
 

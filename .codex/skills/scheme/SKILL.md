@@ -35,7 +35,7 @@ These go in the plan header so every phase can reference them.
 
 ### 4. Draft vertical slices
 
-Have five separate, PARALLEL fullstack_developer break the spec down into **tracer bullet** phases. The five fullstack_developer should try and come up with radically different approaches, but all NEED to follow the following rules for breakdown: 
+Have five separate, PARALLEL software_architect break the spec down into **tracer bullet** phases. The five software_architect should try and come up with radically different approaches, but all NEED to follow the following rules for breakdown: 
 
 - Each phase is a thin vertical slice that cuts through ALL integration layers end-to-end, NOT a horizontal slice of one layer.
 - INVEST Criteria: Ensure each slice is Independent, Negotiable, Valuable, Estimable, Small, and Testable
@@ -81,7 +81,7 @@ Write the scheme file `docs/schemes/YYYY-MM-DD-<feature-name>.md` with the EXACT
 
 Spawn two fresh subagents to review the scheme using the exact prompt in [reviewer-prompt.md](reviewer-prompt.md). Only replace placeholders.
 1. Have business_analyst review spec compliance and slice quality
-2. Have fullstack_developer to review technical soundness
+2. Have review_developer to review technical soundness
 
 ### Step 9: Incorporate Feedback
 

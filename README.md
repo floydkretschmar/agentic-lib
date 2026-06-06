@@ -5,10 +5,10 @@ Agentic Lib is a language-agnostic starting point for agentic software workflows
 The core workflow is:
 
 ```text
-plan-feature -> scheme -> execute -> review
+plan-feature -> scheme -> execute -> review -> finish
 ```
 
-Use this repository as a lightweight operating system for AI-assisted delivery: establish the problem, turn it into testable slices, execute those slices with fresh context, and review the result before calling it done.
+Use this repository as a lightweight operating system for AI-assisted delivery: establish the problem, turn it into testable slices, execute those slices with fresh context, review the result, and finish with final verification before calling it done.
 
 ## Why This Exists
 
@@ -18,6 +18,7 @@ Agentic coding tends to fail when too much context is loaded too early, when pla
 - `scheme` turns the spec into tracer-bullet implementation phases.
 - `execute` runs each phase with focused subagents and verification.
 - `review` checks scope, quality, tests, security, and refactoring.
+- `finish` is the mandatory final gate for verification, documentation, archival, and PR preparation.
 
 The repository is intentionally small. The value is in the workflow contracts, not a language-specific framework.
 
@@ -79,10 +80,15 @@ Use it when the scheme is approved and implementation should begin.
 
 Use it after implementation work and before declaring the branch complete.
 
+### 5. Finish
+
+`finish` is a fundamental part of the skill chain. It performs final verification, captures documentation and archival updates, and prepares the branch for PR handoff.
+
+Use it after review passes. A branch is not complete until `finish` has run successfully.
+
 ## Supporting Skills
 
 - `tdd`: Red-green-refactor workflow for behavior-first implementation.
-- `finish`: Final verification, documentation, archival, and PR preparation.
 - `rearchitect`: Finds opportunities to deepen shallow modules and improve testability.
 - `frontend-design`: Builds polished frontend interfaces when UI work is in scope.
 
@@ -115,6 +121,7 @@ These commands are the shared contract for proving that a change is ready. Indiv
 3. For new feature work, start with `plan-feature`.
 4. For an approved spec, continue with `scheme`.
 5. For an approved scheme, run `execute`.
-6. After implementation, run `review` and final verification.
+6. After implementation, run `review`.
+7. After review passes, run `finish` for final verification and handoff preparation.
 
 This keeps the workflow language-agnostic while still giving agents enough structure to work reliably.

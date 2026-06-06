@@ -13,7 +13,7 @@ This skill will be invoked when the user wants to create plan a feature.
 
 3. Conduct an exhaustive interview with the user about every aspect of this plan until you reach a shared understanding. ASK ONE QUESTION AT A TIME. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. Be critical and deeply interrogate every unspoken assumption. 
 
-4. Task three separate new fullstack_developer in parallel to come up with RADICALLY different approaches for implementation in parallel:
+4. Task three separate new software_architect in parallel to come up with RADICALLY different approaches for implementation in parallel:
 
 Have each subagent sketch out the major modules you will need to build or modify to complete the implementation. Actively look for opportunities to extract [deep modules](../../../docs/EXECUTION.md#deep-modules) that can be tested in isolation.
 
