@@ -13,5 +13,5 @@ Return concise findings with severity, rationale, and the smallest suggested cor
 If the spec is sound, say so and list any residual assumptions.
 """
 model = "gpt-5.5"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "high"
 nickname_candidates = ["Spec Analyst", "Requirements Reviewer", "Product Analyst"]
