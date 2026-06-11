@@ -6,9 +6,20 @@ Testing principles are located in `docs/TESTING.md`
 Execution principles (relevant when changing production code) are located in `docs/EXECUTION.md`
 Programming language specific rules are located in `docs/languages/*.md`
 
-YOU ALWAYS FOLLOW THE FOLLOWING SKILL-CHAIN. **None** of these steps can be skipped, or combined unless explicitly stated by the user:
+Follow this skill chain for new feature requests. If the user requires a bugfix or explicitly states otherwise, this may be skipped:
 ```
 /plan-feature OR /rearchitect ──> /scheme ──> /execute ──> /review ──> /finish                                                                                                                                                                                    
+```
+
+# Shell usage
+Always prefix shell commands with `rtk`.
+
+Examples:
+```bash
+rtk git status
+rtk cargo test
+rtk npm run build
+rtk pytest -q
 ```
 
 # Operating Principles (Non-Negotiable)
