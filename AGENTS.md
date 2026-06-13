@@ -10,6 +10,17 @@ Follow this skill chain for new feature requests. If the user requires a bugfix 
 ```
 /plan-feature OR /rearchitect ──> /scheme ──> /execute ──> /review ──> /finish                                                                                                                                                                                    
 ```
+ALWAY USE PROPPER CUSTOM AGENTS FOR THE TASK. Never default to a standard subagent if a custom agent profile is available:
+- For web research, use the `web_researcher` agent.
+- For code analysis, use the `codebase_researcher` agent.
+- For manual testing and qa use the `qa_engineer` agent.
+- For evaluating spec compliance and evaluating business feasability, use the `business_analyst` agent.
+- For refactoring, architectural decisions and coming up with integration strategies, use the `software_architect` agent.
+- For code quality review use the `review_developer` agent.
+- For UI/UX heavy task that are user facing, use the `frontend_developer` agent.
+- For backend/server heavy task mainly involving system to system interaction, use the `backend_developer` agent.
+
+NEVER duplicate work of a subagent. If a subagent is already working on a task, wait for completion and report before continuing.
 
 # Shell usage
 Always prefix shell commands with `rtk`.
