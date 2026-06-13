@@ -26,16 +26,15 @@ This list of user stories should be extremely extensive and cover all aspects of
 
 A list of implementation decisions that were made. This can include:
 
-- The modules that will be built/modified
-- The interfaces of those modules that will be modified
-- Technical clarifications from the developer
+- The [deep modules](../../../docs/EXECUTION.md#deep-modules) that will be built/modified. 
+- Clearly describe the public interfaces of the [deep modules](../../../docs/EXECUTION.md#deep-modules) that will be modified or build
+- Technical clarifications for the developer
 - Architectural decisions
-- Schema changes
-- API contracts
-- Specific interactions
+- Schema or database changes
+- API contracts: When integrating external APIs make the functions/endpoints/contracts to be used explicit based on authoritative sources such as API docs\
+- Dependencies: When adding/modifying dependencies, make the EXACT version to be used explicit by adding one or more version matrix
 
 Do NOT include specific file paths or code snippets. They may end up being outdated very quickly.
-
 DO include diagrams, abstract data flows, module dependencies and public interface abstractions.
 
 ## Testing Decisions
@@ -45,6 +44,7 @@ A list of testing decisions that were made. Include:
 - A description of what makes a good test (only test external behavior, not implementation details)
 - Which modules will be tested
 - Prior art for the tests (i.e. similar types of tests in the codebase)
+- Explicit list of black-box tests that verify expected behaviour end-to-end without specifying implementation details
 
 ## Out of Scope
 

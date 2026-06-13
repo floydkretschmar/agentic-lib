@@ -1,3 +1,6 @@
+# Golden rule:
+**Test only behaviour**: **NEVER** assert structure: Don't test deletions, don't test existence or absence of dependencies, don't assert versions, don't assert architectural dependencies. ONLY. TEST. BEHAVIOUR.
+
 ## Testing Principles
 - **Test driven**: You test before you build. Never the other way around.
 - **Tests are not optional**: Never skip tests to "move faster"
@@ -14,7 +17,6 @@
 - **Remove duplicates**: Remove any partial or full duplicate tests.
 - **Maintain readability**: Never use bad formatting practices to reduce lines of code. Always maintain readability and clarity of the tests.
 - **Keep tests honest**: Never weaken or simplify a test to make it pass; keep the real failing value in the test and fix the logic at the root.
-- **No contract assertions in tests**: Keep unit and strategy tests focused on public behavior of the module under test.
 
 ### Other Conventions
 - Test package paths must mirror main package paths exactly; integration-test grouping must still align with corresponding implementation slice/package.

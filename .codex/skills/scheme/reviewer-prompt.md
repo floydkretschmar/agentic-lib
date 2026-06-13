@@ -27,7 +27,7 @@ Be critical. Evaluate:
    - Are there simpler approaches?
    - Any YAGNI violations (over-engineering)?
 
-6. **TDD Compliance**
+4. **TDD Compliance**
    - Are tests defined before implementation steps?
    - Do tests cover all behavior?
    - Are sensible integration tests included?
