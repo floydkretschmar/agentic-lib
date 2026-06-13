@@ -32,6 +32,7 @@
 - Redact sensitive values before sharing outputs (`***REDACTED***`) and summarize instead of pasting raw credentials.
 - Never use fallback defaults for required environment gates; require explicit values and fail fast when missing.
 - Do not run review after individual slices within a phase. Execute the entire approved phase with fresh subagents first, then run one review cycle for the whole phase.
+- Always extract pipline execution code into run.sh. Pipeline actions never contain complex shell code directly
 
 ### Deep modules
 
