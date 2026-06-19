@@ -41,11 +41,13 @@ An exhaustive list of ALL test scenarios and edgcases for a phase. Use the follo
     - ...
 ...
 
+Do NOT produce concrete code. EVERY LOAD BEARING CLASS NEEDS TO HAVE CORRESPONDING TESTS
+
 **Run:** Execute the narrowest relevant test command first (class/method if possible), then confirm it fails.
 **Expect:** FAIL (red)
 
 #### Step 1.2: Implement minimal code
-A concise description of this vertical slice. Describe the end-to-end behavior, not layer-by-layer implementation. Make deep modules that should be created or modified explicit.
+A concise description of this vertical slice. Describe the end-to-end behavior, not layer-by-layer implementation.
 
 #### Step 1.3: Verify test passes
 **Run:** Execute the same narrow test command used in Step 1.1.
