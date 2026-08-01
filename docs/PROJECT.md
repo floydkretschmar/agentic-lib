@@ -1,8 +1,3 @@
-## Modules
-| Module               | Summary                                                        |
-|----------------------|----------------------------------------------------------------|
-| <!-- Module name --> | <!-- Small one senctence description of the module content --> |
+<!-- 2-3 sentence concise summary of the entire project scope from a user perspective -->
 
-
-## Architectural conventions
-<!-- Bullet point list of key architectural decisions to be filled in. Kepp VERY concise and lean -->
+## Language

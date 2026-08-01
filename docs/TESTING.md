@@ -1,32 +1,31 @@
-# Golden Rule
+# Golden rule
+- **Every public interface has a test.** This covers every exported function and every React component.
 
-**Test only behaviour**: **NEVER** use tests to enforce policy, architecture constraints, dependency state, version state, coverage metrics, file existence, file absence, or deletion. Testing is always behavior validation through public interfaces and observable outcomes.
+## Testing principles
+- **Test only behavior.** A test proves behavior through public interfaces and observable outcomes. NEVER use tests to enforce policy, architecture constraints, dependency state, version state, coverage metrics, file existence, file absence, or deletion.
+- **Test driven.** Write the test before you build.
+- **Tests are not optional.** Never skip tests to "move faster".
+- **Test the behavior that matters.** Cover the observable paths that users, callers, or commands rely on.
+- **Testing simplicity.** Cover a new case with a change to an existing test, for example a new parameter, instead of a new test.
+- **Visual verification.** A change to a user-facing surface needs automated tests and a full visual inspection of the affected screens and controls in the Browser. A review that passed is no substitute, because a fix can read correctly and still fail in the browser.
 
-## Testing Principles
+## Testing conventions
 
-- **Test driven**: You test before you build. Never the other way around.
-- **Tests are not optional**: Never skip tests to "move faster"
-- **Test the behavior that matters**: Cover the observable paths users, callers, or commands rely on.
-- **Testing simplicity**: Never add a new test when an existing test can be parameterized to cover both scenarios. Always modify existing tests to cover new cases instead of adding new ones when possible.
-- **Visual verification**: User-facing surface changes require a full Browser visual check of the affected screens and controls in addition to automated tests.
+- **No empty tests.** Every test must include meaningful assertions and follow the Arrange-Act-Assert pattern.
+- **Test the whole critical path.** Merge tests of partial logic into a single test of the entire critical path.
+- **Share fixtures within modules.** Extract shared setup or fixture logic into a single fixture file next to the test files, and reuse it. Fixtures HAVE to stay local in a module, so do not centralize them or cross-reference them across modules.
+- **Use parameterized tests.** Merge ALL dedicated tests that test the same critical path and that you can express as a single parameterized test.
+- **Remove duplicates.** This includes partial duplicates of a test.
+- **Maintain readability.** Never use bad formatting practices to reduce lines of code.
+- **Keep tests honest.** Never weaken or simplify a test to make it pass. Keep the real failing value in the test, and fix the logic at the root.
+- **Report a changed test.** Change a test only when the requirement changed, and say what it guarded before and what guards that now.
+- **Prove the cover.** A test that passes at its first run proves nothing yet. Break the line of production code for one run, see the test fail, and restore the line.
+- **Await one condition.** Wait for all the values a step needs in one condition. A wait for one and a read of the other is a race.
+- **No cleanup tests.** Never add dedicated tests for a cleanup-only change that changes no user-visible behavior, such as dead-code removal, catalog pruning, or unused-import deletion. Make sure that existing behavior still works.
 
-## Testing Conventions
+### Good tests
 
-- **No empty tests**: Every test must include meaningful assertions and follow the Arrange-Act-Assert pattern.
-- **Prefer holistic tests**: Merge multiple tests that are testing partial logic into a single test that tests the entire critical path.
-- **Share fixtures within modules**: Extract any shared setup or fixture logic into a single fixture file adjacent to the test files and reuse it.Fixtures HAVE to stay local in a module. Do not centralize them or cross-reference them across modules.
-- **Use parameterized tests**: Merge ALL dedicated tests that can be expressed as a single parameterized test testing the same critical path.
-- **Remove duplicates**: Remove any partial or full duplicate tests.
-- **Maintain readability**: Never use bad formatting practices to reduce lines of code. Always maintain readability and clarity of the tests.
-- **Keep tests honest**: Never weaken or simplify a test to make it pass; keep the real failing value in the test and fix the logic at the root.
-
-### Other Conventions
-
-- Never add dedicated tests for pure cleanup-only changes such as dead-code removal, catalog pruning, or unused-import deletion when no user-visible behavior changes; verify existing behavior instead of introducing brittle cleanup tests.
-
-### Good Tests
-
-**Integration-style**: Test through real interfaces, not mocks of internal parts.
+**Integration-style.** Test through real interfaces, not mocks of internal parts.
 
 ```pseudocode
 // GOOD: Tests observable behavior
@@ -41,15 +40,15 @@ test "user can checkout with valid cart":
 
 Characteristics:
 
-- Tests behavior users/callers care about
+- Tests behavior that users and callers care about
 - Uses public API only
 - Survives internal refactors
 - Describes WHAT, not HOW
 - One logical assertion per test
 
-### Bad Tests
+### Bad tests
 
-**Implementation-detail tests**: Coupled to internal structure.
+**Implementation-detail tests.** These tests depend on internal structure.
 
 ```pseudocode
 // BAD: Tests implementation details
@@ -65,10 +64,10 @@ Red flags:
 
 - Mocking internal collaborators
 - Testing private methods
-- Asserting on call counts/order
-- Test breaks when refactoring without behavior change
-- Test name describes HOW not WHAT
-- Verifying through external means instead of interface
+- Asserting on call counts or order
+- Test breaks after a refactor that does not change behavior
+- Test name describes HOW, not WHAT
+- Asserting through external means instead of the interface
 
 ```pseudocode
 // BAD: Bypasses interface to verify
@@ -88,28 +87,28 @@ test "create user makes user retrievable":
   assert retrieved.name == "Alice"
 ```
 
-### When to Mock
+### When to mock
 
-Mock at **system boundaries** only:
+Mock at system boundaries only:
 
-- External APIs (payment, email, etc.)
-- Databases (sometimes - prefer test DB)
-- Time/randomness
+- External APIs (for example payment or email)
+- Databases (sometimes, but prefer a test DB)
+- Time and randomness
 - File system (sometimes)
 
-Don't mock:
+Do not mock:
 
-- Your own classes/modules
+- Your own classes or modules
 - Internal collaborators
 - Anything you control
 
-### Designing for Mockability
+### Designing for mockability
 
 At system boundaries, design interfaces that are easy to mock:
 
 **1. Use dependency injection**
 
-Pass external dependencies in rather than creating them internally:
+Pass external dependencies in instead of creating them internally:
 
 ```pseudocode
 // Easy to mock
@@ -124,7 +123,7 @@ function process_payment(order):
 
 **2. Prefer SDK-style interfaces over generic fetchers**
 
-Create specific functions for each external operation instead of one generic function with conditional logic:
+Create one specific function for each external operation, not one generic function with conditional logic:
 
 ```pseudocode
 // GOOD: Each function is independently mockable
@@ -138,9 +137,9 @@ generic_client:
   request(operation_name, options)
 ```
 
-The SDK approach means:
+The SDK approach gives these results:
 
 - Each mock returns one specific shape
 - No conditional logic in test setup
-- Easier to see which endpoints a test exercises
+- It is easier to see which endpoints a test exercises
 - Type safety per endpoint

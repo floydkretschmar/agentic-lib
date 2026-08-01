@@ -1,44 +1,47 @@
-## Development Principles
-- **Retry failed tool calls**: Failed tool calls are NOT unexpected and do NOT trigger stop-the-line by themselves; reexecute the tool call and only stop-the-line if the failure is not transient.
-- **Test failures in changed classes are expected (RED PHASE)**: A regression in a test touched during the current implementation is expected debugging work, DO NOT STOP THE LINE FOR THIS.
-- **Follow planning docs**: If a discrepancy appears between scheme or spec and implementation, do not retrofit them to match code. Fix implementation to match the approved planning docs instead.
-- **Clean baseline**: Never continue execution or review work on a dirty baseline; restore `./run.sh test`, `./run.sh format`, and `./run.sh build` to green first.
-- **Use websearch to fix tooling incompatibilities**: When tooling incompatibilities occur, use web verification to confirm the latest compatible versions before changing approach or switching tools.
-- **In-phase review drift**: Treat review drift against an approved phase as a bug to fix immediately; do not create a separate todo item before dispatching the bug-fix subagent.
+## Development principles
+- **Retry failed tool calls.** A failed tool call is NOT unexpected and does NOT trigger stop-the-line by itself. Run the tool call again, and stop the line only if the failure does not go away.
+- **Test failures in changed classes are expected (RED PHASE).** A regression in a test that the current implementation touched is expected debugging work, so DO NOT STOP THE LINE FOR THIS.
+- **Follow planning docs.** If the implementation differs from the approved scheme or spec, fix the implementation, not the planning docs. If the user changes a rule during the execution, record it in the spec and the scheme with the same change.
+- **Clean baseline.** If `./run.sh lint`, `./run.sh test`, or `./run.sh build` fails, restore it to green before you continue execution or review work.
+- **Use websearch to fix tooling incompatibilities.** Search the web for the latest compatible versions before you change approach or switch tools.
+- **Boy scout rule.** Fix an inconsistency, regression, bug or departure from a general project rule even outside the task, if it is small, LOCALIZED and easy. Do the same for a small and LOCALIZED refactor. Each such fix lands as its own addendum of the current phase, that is, an item in `tasks/todo.md` with its TDD evidence. Name each fix to the user, and send it through the review and the QA of the phase. Change only what the defect or the refactor needs. If the fix changes behavior, it has its own test. A change that needs a design decision or a new abstraction, or that touches more than one module, is not a boy scout fix. Record such a change and discuss it first, as `AGENTS.md`/`CLAUDE.md` requires.
+- **In-phase review drift.** Treat review drift against an approved phase as a bug to fix immediately. Do not create a separate todo item before you dispatch the bug-fix subagent.
+- **No circular imports.** Fix every circular import as a direct amendment of the current phase, also when it is type-only or harmless today. One module owns the shared value, and its users import it from there.
 
-## Verification Before Done
-- Never mark a task complete without proving it works
-- Diff behavior between main and your changes when relevant
-- When changing code related to user-facing surfaces, always perform a full visual check with the Browser across the affected screens and controls
+## Verification before done
+- Never mark a task complete until you prove that it works
+- When it is relevant, diff the behavior between main and your changes
+- If you change code related to user-facing surfaces, do a full visual inspection of all affected screens and controls with the Browser
 - Ask yourself: "Would a staff engineer approve this?"
-- Run full validation suite (`./run.sh test`, `./run.sh format`, and `./run.sh build`) to prove correctness
+- Run the full validation suite: `./run.sh lint`, `./run.sh test`, and `./run.sh build`
 
 ## Coding conventions
-**General principles:**
-- NEVER use defaults for parameterized configuration via environment variables
-- Never keep parallel abstractions that model the same responsibility; one canonical port path must exist and dead abstractions must be removed.
-- Use proper error handling patterns (avoid try/catch when possible)
-- Maintain consistent naming conventions
+**General principles**
+- **Never write comments.** Find a better name instead, so that the names explain the code.
+- **Configuration lives in a dedicated configuration file.** A hostname, a port, a URL or any other parameterized value is never a literal or a constant in code. One checked-in file owns each value, and every consumer reads it from there. A carve-out from 2026-08-21 lets a bundle that cannot import the configuration file hold the one value as a constant. The constant must have a constraint comment that names the `config/local.json` key, and a unit test that pins the two against drift.
+- NEVER use a default for parameterized configuration or a required gate that comes from an environment variable. Require an explicit value, and fail fast when it is missing.
+- Keep exactly one canonical port path for each responsibility, and remove parallel and dead abstractions.
+- Use proper error handling patterns, and avoid try/catch where you can
+- Keep naming conventions consistent
 
-**Enforce Clarity**:
+**Enforce clarity**
 - Limit unnecessary complexity and nesting
 - Eliminate redundant code and abstractions
 - Consolidate related logic
-- IMPORTANT: Avoid nested ternary operators - prefer switch statements or if/else chains for multiple conditions
-- Choose clarity over brevity - explicit code is often better than overly compact code
-- After refactoring, never leave unused artifacts behind; remove the maximum amount of dead code and configuration that can be deleted without changing behavior.
+- Do not nest ternary operators. For multiple conditions, prefer switch statements or if/else chains
+- Prefer explicit code over overly compact code
+- After a refactor, remove all dead code and configuration that you can delete without a change in behavior
 
-**Other Conventions**:
-- Redact sensitive values before sharing outputs (`***REDACTED***`) and summarize instead of pasting raw credentials.
-- Never use fallback defaults for required environment gates; require explicit values and fail fast when missing.
-- Do not run review after individual slices within a phase. Execute the entire approved phase with fresh subagents first, then run one review cycle for the whole phase.
-- Always extract pipline execution code into run.sh. Pipeline actions never contain complex shell code directly
+**Other conventions**
+- Summarize outputs before you share them, replace sensitive values with `***REDACTED***`, and never paste raw credentials.
+- Execute the entire approved phase with fresh subagents, then run one review cycle for the whole phase, not one per slice.
+- Put pipeline execution code into run.sh, and keep complex shell code out of pipeline actions.
 
 ### Deep modules
 
-When given the choice, always prefer implementing deep modules. From "A Philosophy of Software Design":
+If you have the choice, build deep modules, as "A Philosophy of Software Design" describes them.
 
-**Deep module** = small interface + lots of implementation
+A deep module has a small interface and a lot of implementation.
 
 ```
 ┌─────────────────────┐
@@ -52,7 +55,7 @@ When given the choice, always prefer implementing deep modules. From "A Philosop
 └─────────────────────┘
 ```
 
-**Shallow module** = large interface + little implementation (avoid)
+A shallow module has a large interface and little implementation. Avoid it.
 
 ```
 ┌─────────────────────────────────┐
@@ -62,18 +65,16 @@ When given the choice, always prefer implementing deep modules. From "A Philosop
 └─────────────────────────────────┘
 ```
 
-When designing interfaces, ask:
+When you design interfaces, ask these questions:
 
 - Can I reduce the number of methods?
 - Can I simplify the parameters?
 - Can I hide more complexity inside?
-- Is the module deep without becoming a god module? As rough guidance, prefer 200-400 line modules with 1-3 public runtime exports when the responsibility is substantial.
+- Is the module deep without becoming a god module? As rough guidance for a substantial responsibility, prefer modules of 200-400 lines with 1-3 public runtime exports.
 
-### Design Interfaces for Testability
+### Design interfaces for testability
 
-Good interfaces make testing natural:
-
-1. **Accept dependencies, don't create them**
+1. **Accept dependencies, do not create them**
 
    ```pseudocode
    // Testable
@@ -86,7 +87,7 @@ Good interfaces make testing natural:
      use payment_gateway to process order
    ```
 
-2. **Return results, don't produce side effects**
+2. **Return results, do not produce side effects**
 
    ```pseudocode
    // Testable
@@ -98,6 +99,6 @@ Good interfaces make testing natural:
      cart.total = cart.total - discount
    ```
 
-3. **Small surface area**
-   - Fewer methods = fewer tests needed
-   - Fewer params = simpler test setup
+3. **Small interface**
+   - Fewer methods mean fewer tests
+   - Fewer parameters mean simpler test setup

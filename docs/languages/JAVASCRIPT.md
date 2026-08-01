@@ -1,11 +1,11 @@
 ## Coding conventions
-- Use ES modules with proper import sorting and extensions
-- Prefer `function` keyword over arrow functions
-- Use explicit return type annotations for top-level functions
-- Follow proper React component patterns with explicit Props types
-- Prefer async/await over promise chaining for better readability
+- Use ES modules with sorted imports and with file extensions in the import paths.
+- Prefer the `function` keyword over arrow functions.
+- Give each top-level function an explicit return type annotation.
+- Give each React component an explicit Props type.
+- Prefer async/await over promise chaining, because it is easier to read.
 
-## React Hooks
+## React hooks
 
-- Decompose large hooks into smaller focused hooks that each own one cohesive behavior or derived state concern.
-- Keep hook exports production-used and behavior-oriented; do not create hook boundaries solely for tests.
+- Split a large hook into smaller hooks that each own one behavior or one concern of derived state.
+- Export only hooks that production code uses and that are oriented to a behavior. Do not create hook boundaries only for tests.
