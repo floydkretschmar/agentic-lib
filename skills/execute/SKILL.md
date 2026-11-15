@@ -1,13 +1,10 @@
 ---
 name: execute
-description: Execute an implementation scheme with a subagent for each phase until completion. Use it after a scheme exists and the user is ready to start implementation.
+description: Use when an existing feature scheme and spec is supposed to be implemented.
 ---
 
 # Execute skill
-Execute an implementation scheme with a fresh subagent for each phase until all phases are complete.
-
-## Phases
-Follow these steps:
+Execute an implementation scheme until all phases are complete.
 
 1. Gather context
 2. Loop until ALL phases in the spec are done (review and manual testing PASSED):
@@ -17,15 +14,7 @@ Follow these steps:
 3. Final review
 4. Full manual regression test and a check for flaky tests
 
-## The execute philosophy
-A fresh subagent for each phase prevents context pollution. Each iteration:
-1. Starts with a fresh context that holds nothing from previous phases
-2. Works on ONE phase only
-3. Reports back a status: DONE, BLOCKED, or ERROR
-
 ## Quality gates
-
-Each subagent must:
 - Touch only ONE phase
 - Follow TDD (test first) with the /tdd skill
 - Update tasks/todo.md
@@ -37,9 +26,9 @@ You cannot mark a phase complete until:
 - The build succeeds
 - The spec compliance review passes
 - The code quality review passes
+- The manual QA passes
 
 ### Step 1: Gather context
-
 Start from the conversation context. Then:
 
 1. Read the spec file and the scheme file
@@ -51,16 +40,17 @@ Start from the conversation context. Then:
 To add an addendum, add the issues to tasks/todo.md after the current phase. Then continue the implementation loop.
 
 ### Step 2.I: Execute current phase
+Implement the current phase using test driven development (read the `tdd` skill before writing any code):
 
-For EACH incomplete phase, give a fresh subagent the EXACT prompt in [execution-prompt.md](execution-prompt.md) and replace ONLY its placeholders. The subagent executes the phase with TDD.
+1. List the required behaviors, including unhappy paths.
+2. Write one test for one behavior through the public interface. Assert on what the caller gets back. (RED)
+3. Run it. It must fail because the behavior is missing, not because of a typo.
+4. Write the least code that makes it pass. (GREEN)
+5. Run the suite until green.
+6. Find and refactor all refactor candidates, then run the tests again and make sure the full baseline is green. You change structure only. (REFACTOR)
+7. Repeat until all required behaviors are implemented.
 
-Choose the subagent by task:
-- frontend-agent: user-facing tasks that are heavy on UI and UX
-- backend-agent: backend or server tasks that mainly involve system-to-system interaction
-
-After each subagent completes:
-- If it reports `STATUS: DONE`, proceed to Step 2.II.
-- If it reports `STATUS: BLOCKED`, report the blocker to the user and ask how to proceed.
+Execute the task completely according to the spec and scheme. If you encounter any blocking issue that you cannot resolve by yourself, stop and ask the user for feedback.
 
 ### Step 2.II: Review current phase
 
@@ -90,12 +80,13 @@ Invoke /review for a final full review of THE ENTIRE BRANCH, not of the changes 
 
 Have a new qa-agent manually test the entire application scope and prove that the change introduced no visual or feature regressions.
 
-In parallel, have a new subagent check the test suites for flaky tests. A flaky test passes and fails on the same code. The subagent:
-1. Runs the integration and end-to-end tiers at least 10 times on the load of the CI runner: it limits the test process and the local Docker containers to the CPU count of the runner, and uses the worker count of the pipeline.
+In parallel, have a new subagent check the test suites for flaky tests. The subagent must:
+
+1. Run the integration and end-to-end tiers at least 10 times on the load of the CI runner
 2. Runs each test that failed once again with `--repeat-each` (Playwright) or in a loop (Vitest), with and without the change of the branch, to find out how often it fails and whether the branch caused it.
 3. Reports each flaky test with its file and line, the failure message, how often it failed, and the conditions. 
 
-Summarize the findings in `tasks/regression-review.md` with the template [summary-template.md](../review/summary-template.md). List each flaky test as a finding, and report the flaky tests to the user.
+Summarize the findings of both subagents in `tasks/qa-review.md` with the template [summary-template.md](../review/summary-template.md). 
 
-- If regression testing returns `REVIEW: PASSED`, report to the user that the feature is fully implemented. Include a summary of ALL review and regression findings and their fixes.
+- If regression testing returns `REVIEW: PASSED`, report to the user that the feature is fully implemented.
 - If regression testing returns `REVIEW: NEEDS_CHANGES`, add an addendum.

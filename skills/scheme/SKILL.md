@@ -1,6 +1,6 @@
 ---
 name: scheme
-description: Turn a spec into a multi-phase implementation plan with tracer-bullet vertical slices, and save it as a local Markdown file in ./docs/schemes/. Use when the user wants to break down a spec, create an implementation plan, plan phases from a spec, or mentions "tracer bullets".
+description: Use after generating a spec and before starting implementation. 
 ---
 
 # Scheme skill

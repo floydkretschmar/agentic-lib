@@ -1,31 +1,30 @@
-# Golden rule
-- **Every public interface has a test.** This covers every exported function and every React component.
+## Golden rule
+Every public interface has a test. This covers every exported function and every React component.
 
-## Testing principles
-- **Test only behavior.** A test proves behavior through public interfaces and observable outcomes. NEVER use tests to enforce policy, architecture constraints, dependency state, version state, coverage metrics, file existence, file absence, or deletion.
-- **Test driven.** Write the test before you build.
-- **Tests are not optional.** Never skip tests to "move faster".
-- **Test the behavior that matters.** Cover the observable paths that users, callers, or commands rely on.
-- **Testing simplicity.** Cover a new case with a change to an existing test, for example a new parameter, instead of a new test.
-- **Visual verification.** A change to a user-facing surface needs automated tests and a full visual inspection of the affected screens and controls in the Browser. A review that passed is no substitute, because a fix can read correctly and still fail in the browser.
+## Testing pyramid
+Follow the testing pyramid of unit, integration and end-to-end tests:
 
-## Testing conventions
+- Unit tests are cheap and plentiful. Cover EVERYTHING a function could produce: Happy case, unhappy case, edge cases. Be as exhaustive as possible
+- Integration test verify behavior that only emerges when interacting with other systems: API responses, Database queries and other external system calls. Cover critical integration points thoroughly but be aware of the increased cost compared to unit tests.
+- End-to-end test prove the correctness of user journey through the real stack. They confirm that the most critical paths of the application work. They offer the highest quality proof but are very expensive and should be used sparingly. ALWAYS prefer to test new behavior as part of existing end-to-end tests, instead of creating a new one.
 
-- **No empty tests.** Every test must include meaningful assertions and follow the Arrange-Act-Assert pattern.
-- **Test the whole critical path.** Merge tests of partial logic into a single test of the entire critical path.
-- **Share fixtures within modules.** Extract shared setup or fixture logic into a single fixture file next to the test files, and reuse it. Fixtures HAVE to stay local in a module, so do not centralize them or cross-reference them across modules.
-- **Use parameterized tests.** Merge ALL dedicated tests that test the same critical path and that you can express as a single parameterized test.
-- **Remove duplicates.** This includes partial duplicates of a test.
-- **Maintain readability.** Never use bad formatting practices to reduce lines of code.
-- **Keep tests honest.** Never weaken or simplify a test to make it pass. Keep the real failing value in the test, and fix the logic at the root.
-- **Report a changed test.** Change a test only when the requirement changed, and say what it guarded before and what guards that now.
-- **Prove the cover.** A test that passes at its first run proves nothing yet. Break the line of production code for one run, see the test fail, and restore the line.
-- **Await one condition.** Wait for all the values a step needs in one condition. A wait for one and a read of the other is a race.
-- **No cleanup tests.** Never add dedicated tests for a cleanup-only change that changes no user-visible behavior, such as dead-code removal, catalog pruning, or unused-import deletion. Make sure that existing behavior still works.
+## Testing rules
+- Work test driven and write the test before you build.
+- Never skip tests to "move faster".
+- Never weaken or simplify a test to make it pass. Keep the real failing value in the test, and fix the root cause of the failure.
+- Every test must include meaningful assertions and follow the Arrange-Act-Assert pattern.
+- Cover all observable paths that users, callers, or commands rely on.
+- Cover a new case with a change to an existing test, for example a new parameter, instead of a new test.
+- Remove duplicate tests, including partial duplicates of the same logic spread across multiple tests. 
+- A change to a user-facing surface needs a full visual inspection of the affected screens and controls in the Browser. 
+- Extract shared setup or fixture logic into a single fixture file next to the test files, and reuse it. Fixtures have to stay local in a module, so do not centralize them or cross-reference them across modules.
+- Maintain readability and never use bad formatting practices to reduce lines of code.
+- A test that passes at its first run proves nothing yet. Break the line of production code for one run, see the test fail, and restore the line.
+- Write test that prevent race conditions and flakiness. Wait for all the values a step needs in one condition before asserting the next step.
+- Never add dedicated tests for a cleanup-only change that changes no user-visible behavior, such as dead-code removal, catalog pruning, or unused-import deletion.
+- Never use tests to enforce policy, architecture constraints, dependency state, version state, coverage metrics, file existence, file absence, or deletion.
 
-### Good tests
-
-**Integration-style.** Test through real interfaces, not mocks of internal parts.
+### Good tests assert through real interfaces
 
 ```pseudocode
 // GOOD: Tests observable behavior
@@ -38,17 +37,14 @@ test "user can checkout with valid cart":
   assert result.status == "confirmed"
 ```
 
-Characteristics:
+Good tests share the following characteristics. They:
 
-- Tests behavior that users and callers care about
-- Uses public API only
-- Survives internal refactors
-- Describes WHAT, not HOW
-- One logical assertion per test
+- test behavior that users and callers care about
+- use the public API only
+- survive internal refactors that do not change external behavior
+- have a name that describes WHAT a public interface should return, not HOW it works internally
 
-### Bad tests
-
-**Implementation-detail tests.** These tests depend on internal structure.
+### Bad tests depend on internal structure
 
 ```pseudocode
 // BAD: Tests implementation details
@@ -60,14 +56,14 @@ test "checkout calls payment service process":
   assert mock_payment_service.process_was_called_with(cart.total)
 ```
 
-Red flags:
+Bad tests share the following red flags. They
 
-- Mocking internal collaborators
-- Testing private methods
-- Asserting on call counts or order
-- Test breaks after a refactor that does not change behavior
-- Test name describes HOW, not WHAT
-- Asserting through external means instead of the interface
+- mock internal collaborators
+- test private methods
+- assert on call counts or order
+- break after a refactor that does not change public behavior
+- their name describes HOW a function works, not WHAT it should return
+- assert through external means instead of the interface
 
 ```pseudocode
 // BAD: Bypasses interface to verify
@@ -89,15 +85,13 @@ test "create user makes user retrievable":
 
 ### When to mock
 
-Mock at system boundaries only:
-
+Mock at system boundaries:
 - External APIs (for example payment or email)
 - Databases (sometimes, but prefer a test DB)
 - Time and randomness
 - File system (sometimes)
 
 Do not mock:
-
 - Your own classes or modules
 - Internal collaborators
 - Anything you control

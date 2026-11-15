@@ -1,10 +1,12 @@
 You always use `/simple-english` and `/unslop`.
 
 The project tracks its issues in GitHub, as `docs/ISSUE-TRACKER.md` describes.
-General project information is in `docs/PROJECT.md`.
-Testing principles are in `docs/TESTING.md`.
-When you change production code, apply the execution principles in `docs/EXECUTION.md`.
+Defined shared terminology can be found under `docs/GLOSSARY.md`.
+Always follow the execution principles in `docs/EXECUTION.md` when writing any code.
+Always follow the testing principles in `docs/TESTING.md` when writing tests.
 Rules for each programming language are in `docs/languages/*.md`.
+When you change user-facing surfaces, use the prototype under `prototypes/` as the design reference
+When you make or propose any change, make sure to follow the ADRs in `docs/adr/*`
 
 # Operating principles (non-negotiable)
 - **Less is better.** Reduce lines of code instead of adding them.
@@ -16,7 +18,6 @@ Rules for each programming language are in `docs/languages/*.md`.
 - **Prove it works.** Run the tests, the build and lint, because "seems right" is not done.
 - **Be explicit about uncertainty.** If you cannot make sure that something is true, say so.
 - **No laziness.** Find the root cause and write a production-quality fix, never a temporary one.
-- **Subagent strategy.** Use subagents liberally for research, exploration, and parallel analysis, to keep the main context window clean. Give each subagent one task so that it stays focused.
 - **Refactor after green.** After the behavior is green, always do the refactor step of TDD with the /tdd skill.
 
 # Forbidden actions

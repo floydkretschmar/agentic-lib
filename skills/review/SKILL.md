@@ -1,6 +1,6 @@
 ---
 name: review
-description: Verify implementation quality with parallel subagents for a full review. Use it after implementation to make sure that the new state of the codebase meets the expected quality standards.
+description: Use everytime code has been changed. Only skip when the user explicitly asks to skip this step.
 ---
 
 # Review skill

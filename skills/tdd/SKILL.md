@@ -1,17 +1,19 @@
 ---
 name: tdd
-description: Test-driven development with a red-green-refactor loop. Use when the user wants to build features or fix bugs with TDD, mentions "red-green-refactor", wants integration tests, or asks for test-first development.
+description: Use whenever code is changed. Use when "TDD", "Test-Driven Development" or "Test first" are mentioned.
 ---
 
 # Test-driven development
 
-TDD is the red-to-green-refactor loop:
+TDD is the red-to-green-refactor cycle:
 
-1. Write a test for the current slice.
-2. Run it and make sure that it fails (RED).
-3. Implement the slice, and run the same test to make sure that it passes (GREEN).
-4. After all tests pass, find and refactor all refactor candidates (REFACTOR).
-5. Run the baseline verification to make sure that the refactor is correct.
+1. List the required behaviors, including unhappy paths.
+2. Write one test for one behavior through the public interface. Assert on what the caller gets back. (RED)
+3. Run it. It must fail because the behavior is missing, not because of a typo.
+4. Write the least code that makes it pass. (GREEN)
+5. Run the suite until green.
+6. Find and refactor all refactor candidates, then run the tests again and make sure the full baseline is green. You change structure only. (REFACTOR)
+7. Repeat until all required behaviors are implemented.
 
 The sections below define what makes the loop produce useful tests. Each section applies to every cycle.
 

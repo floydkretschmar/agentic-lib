@@ -68,7 +68,7 @@ class PreToolUsePolicyTest(unittest.TestCase):
     def test_allows_ordinary_apply_patch_targets(self) -> None:
         patch = (
             "*** Begin Patch\n"
-            "*** Update File: docs/PROJECT.md\n"
+            "*** Update File: docs/GLOSSARY.md\n"
             "@@\n"
             "+Project notes\n"
             "*** End Patch\n"

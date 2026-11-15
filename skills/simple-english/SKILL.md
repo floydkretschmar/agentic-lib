@@ -1,8 +1,6 @@
 ---
 name: simple-english
-description: |
-  Write or rewrite text in plain, layman-readable English in the spirit of
-  ASD-STE100 Simplified Technical English. Always use this.
+description: Always use when generating output.
 license: MIT
 ---
 
