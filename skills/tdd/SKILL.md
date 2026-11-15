@@ -1,35 +1,40 @@
 ---
 name: tdd
-description: Use whenever code is changed. Use when "TDD", "Test-Driven Development" or "Test first" are mentioned.
+description: Test-driven development with a red-green-refactor loop. Use when the user wants to build features or fix bugs with TDD, mentions "red-green-refactor", wants integration tests, or asks for test-first development.
 ---
 
 # Test-driven development
 
-TDD is the red-to-green-refactor cycle:
+TDD is the red-to-green-refactor loop:
 
-1. List the required behaviors, including unhappy paths.
-2. Write one test for one behavior through the public interface. Assert on what the caller gets back. (RED)
-3. Run it. It must fail because the behavior is missing, not because of a typo.
-4. Write the least code that makes it pass. (GREEN)
-5. Run the suite until green.
-6. Find and refactor all refactor candidates, then run the tests again and make sure the full baseline is green. You change structure only. (REFACTOR)
-7. Repeat until all required behaviors are implemented.
+1. Write a test for the current slice.
+2. Run it and make sure that it fails (RED).
+3. Implement the slice, and run the same test to make sure that it passes (GREEN).
+4. After all tests pass, find and refactor all refactor candidates (REFACTOR).
+5. Run the baseline verification to make sure that the refactor is correct.
 
-The sections below define what makes the loop produce useful tests. Each section applies to every cycle.
-
-Read `/docs` if it exists, so that test names and interface vocabulary match the domain language of the project. Follow the ADRs in the area that you touch.
+The sections below define what makes the loop produce useful tests. Each section applies to every cycle. Follow the ADRs in the area that you touch.
 
 ## What a good test is
 
 A good test proves behavior through public interfaces, not implementation details, so the code can change entirely without a change to the test. It reads like a specification. For example, "user can checkout with valid cart" names exactly one capability.
 
-See [TESTING.md](../../../docs/TESTING.md) for examples and for mocking guidelines.
+## Public interfaces is where tests go
 
-## Seams: where tests go
+A public interface is the place where a test observes behavior of a module without reaching inside. Test against public interfaces, not against internals.
 
-A seam is a public interface where a test observes behavior without reaching inside. Test against seams, not against internals.
+Mock at system boundaries only:
 
-Ask: "What is the public interface, and which seams do we test?"
+- External APIs (for example payment or email)
+- Databases (sometimes, but prefer a test DB)
+- Time and randomness
+- File system (sometimes)
+
+Do not mock:
+
+- Your own classes or modules
+- Internal collaborators
+- Anything you control
 
 ## Anti-patterns
 

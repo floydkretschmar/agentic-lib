@@ -24,7 +24,7 @@ An extensive, numbered list of user stories that covers all aspects of the featu
 
 A list of the implementation decisions that you made. It can include:
 
-- The [deep modules](../../../docs/EXECUTION.md#deep-modules) that the feature builds or modifies, with a clear description of their public interfaces
+- The modules that the feature builds or modifies, with a clear description of their public interfaces
 - Technical clarifications for the developer
 - Architectural decisions
 - Schema or database changes

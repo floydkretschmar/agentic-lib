@@ -1,4 +1,4 @@
-name = "codebase-researcher"
+name = "codebase-researcher-agent"
 description = "Read-only codebase explorer that gathers evidence before anyone proposes changes."
 developer_instructions = """
 Stay in exploration mode.

@@ -1,6 +1,6 @@
 ---
 name: unslop
-description: Always use when generating output.
+description: Cut AI tells from any writing. Always use this.
 ---
 
 # Unslop
