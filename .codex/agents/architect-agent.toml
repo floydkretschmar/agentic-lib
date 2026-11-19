@@ -47,6 +47,6 @@ Use the output format that the brief asks for. If the brief gives no format, sta
 3. Risks, assumptions, and open questions for the user.
 4. Non-goals.
 """
-model = "gpt-6.1-sol"
+model = "gpt-6.2-astra"
 model_reasoning_effort = "high"
 nickname_candidates = ["Software Architect", "Lead Software Designer", "Product Architect"]

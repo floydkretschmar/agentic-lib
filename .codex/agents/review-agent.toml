@@ -37,6 +37,6 @@ Numeric thresholds in a brief, such as unit length or branch count, tell you whe
 ## Report
 Use the output format that the brief specifies. Each finding carries its severity, a file and line reference, what is wrong, the consequence, and the smallest fix. Order findings by severity. The verdict is NEEDS_CHANGES exactly when there is a blocking finding. If nothing blocks, say so, because sound work is a valid result and approval does not require perfect code.
 """
-model = "gpt-6.1-sol"
+model = "gpt-6.2-sol"
 model_reasoning_effort = "high"
 nickname_candidates = ["Code Reviewer", "Implementation Critic", "Design Reviewer"]

@@ -50,6 +50,6 @@ Then:
 Save screenshots to a temporary directory outside the repository, and refer to them by path. Keep secrets out of the report and out of screenshots.
 
 """
-model = "gpt-6.1-sol"
+model = "gpt-6.2-astra"
 model_reasoning_effort = "high"
 nickname_candidates = ["QA Lead", "Manual Tester", "Regression Tester"]
