@@ -9,7 +9,7 @@ A shared agent setup for Claude Code, Codex and opencode. All three tools read t
 | `AGENTS.md` | Operating principles and the coding, testing and naming rules. `CLAUDE.md` is a symlink to it. |
 | `skills/` | The skills. `.claude/skills`, `.codex/skills` and `.opencode/skills` are symlinks to this folder. |
 | `.claude/agents/`, `.codex/agents/`, `.opencode/agents/` | The same five subagents, once in each tool's format. |
-| `.codex/hooks/pre_tool_use_policy.py` | Safety hook for Codex and opencode. It blocks `git reset --hard`, `git clean`, `rm -rf`, `sudo`, `curl \| sh` and edits to `.git`, `.ssh`, `.env`, key files and absolute paths. Relative `..` paths in patches still pass. |
+| `.codex/hooks/pre_tool_use_policy.py` | Safety hook for Claude Code, Codex and opencode. It blocks `git reset --hard`, `git clean`, `rm -rf`, `sudo`, `curl \| sh` and edits to `.git`, `.ssh`, `.env`, key files and paths outside the project. `.claude/settings.json` runs it for every Claude Code tool call and blocks the call when the hook fails, which needs Claude Code 2.1.295 or later. |
 | `.opencode/opencode.json` | The opencode configuration. It loads the `pre-tool-use` plugin with its commands and timeouts, then the `context-mode` plugin. |
 | `.opencode/plugins/pre-tool-use/` | opencode plugin that sends each shell command, edit, write and patch to the safety hook and then rewrites allowed shell commands with `rtk hook opencode`. It blocks the call when the safety hook fails, and runs the original command when rtk fails. It does not check MCP tool calls, so code that context-mode's `ctx_execute` runs bypasses the safety hook. |
 | `docs/` | Templates for the glossary and ADRs, and the GitHub issue tracker conventions. |

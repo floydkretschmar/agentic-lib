@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process"
-import { isAbsolute, relative, resolve, sep } from "node:path"
+import { resolve } from "node:path"
 
 type ToolEvent = { tool: string; agent: string; input: Record<string, unknown> }
 
@@ -51,13 +51,6 @@ function runCommand(configuredCommand: ConfiguredCommand, commandArguments: stri
   })
 }
 
-function safetyHookPathFor(inputPath: string, projectDirectory: string): string {
-  const absolutePath = resolve(projectDirectory, inputPath)
-  const projectRelativePath = relative(projectDirectory, absolutePath)
-  const isOutsideProject = projectRelativePath === ".." || projectRelativePath.startsWith(`..${sep}`) || isAbsolute(projectRelativePath)
-  return isOutsideProject ? absolutePath : projectRelativePath
-}
-
 function denialReasonFrom(safetyHookOutput: string): string {
   const decision = JSON.parse(safetyHookOutput).hookSpecificOutput
   if (decision?.permissionDecision === "deny" && typeof decision.permissionDecisionReason === "string") {
@@ -94,7 +87,7 @@ export default {
         hook_event_name: "PreToolUse",
         tool_name: safetyHookMapping.hookToolName,
         tool_input: {
-          [safetyHookMapping.payloadField]: safetyHookMapping.inputIsPath ? safetyHookPathFor(inputValue, projectDirectory) : inputValue,
+          [safetyHookMapping.payloadField]: safetyHookMapping.inputIsPath ? resolve(projectDirectory, inputValue) : inputValue,
         },
       }
       const safetyHookOutput = await runCommand(safetyHook, [], JSON.stringify(safetyHookPayload), projectDirectory).catch((error: Error) => {

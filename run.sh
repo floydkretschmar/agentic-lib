@@ -28,7 +28,8 @@ run_build() {
 }
 
 safety_hook() {
-  python3 "$(git rev-parse --show-toplevel)/.codex/hooks/pre_tool_use_policy.py"
+  project_directory="$(git rev-parse --show-toplevel)"
+  python3 "$project_directory/.codex/hooks/pre_tool_use_policy.py" "$project_directory"
 }
 
 setup_environment() {

@@ -7,12 +7,13 @@ from pathlib import Path
 
 
 HOOK = Path(__file__).with_name("pre_tool_use_policy.py")
+PROJECT_DIRECTORY = "/workspace/project"
 
 
 def run_hook(payload: str | dict) -> subprocess.CompletedProcess[str]:
     stdin = json.dumps(payload) if isinstance(payload, dict) else payload
     return subprocess.run(
-        [sys.executable, str(HOOK)],
+        [sys.executable, str(HOOK), PROJECT_DIRECTORY],
         input=stdin,
         text=True,
         capture_output=True,
@@ -74,7 +75,9 @@ class PreToolUsePolicyTest(unittest.TestCase):
                     )
                 },
             ),
+            ("apply_patch", {"command": "*** Begin Patch\n*** Add File: ../outside.md\n*** End Patch\n"}),
             ("Edit", {"file_path": ".env"}),
+            ("Edit", {"file_path": f"{PROJECT_DIRECTORY}/.git/config"}),
             ("Write", {"file_path": "/etc/hosts"}),
         ):
             with self.subTest(tool_name=tool_name, tool_input=tool_input):
@@ -94,7 +97,7 @@ class PreToolUsePolicyTest(unittest.TestCase):
                     )
                 },
             ),
-            ("Write", {"file_path": "docs/GLOSSARY.md"}),
+            ("Write", {"file_path": f"{PROJECT_DIRECTORY}/docs/GLOSSARY.md"}),
         ):
             with self.subTest(tool_name=tool_name, tool_input=tool_input):
                 result = run_hook(pre_tool_use(tool_name, tool_input))

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+import argparse
 import json
+import os
 import re
 import shlex
 import sys
@@ -75,6 +77,14 @@ def is_sensitive_path(path: str) -> bool:
     )
 
 
+def project_path_for(path: str, project_directory: str) -> str:
+    absolute_path = os.path.normpath(os.path.join(project_directory, path.strip().strip("\"'")))
+    project_relative_path = os.path.relpath(absolute_path, project_directory)
+    if project_relative_path == ".." or project_relative_path.startswith("../"):
+        return absolute_path
+    return project_relative_path
+
+
 def patch_paths(command: str) -> Iterable[str]:
     for line in command.splitlines():
         match = re.match(r"\*\*\* (Add File|Delete File|Update File|Move to): (.+)$", line)
@@ -117,10 +127,11 @@ def bash_denial_reason(command: str) -> str | None:
     return None
 
 
-def edit_denial_reason(paths: Iterable[str]) -> str | None:
+def edit_denial_reason(paths: Iterable[str], project_directory: str) -> str | None:
     for path in paths:
-        if is_sensitive_path(path):
-            return f"editing sensitive path is blocked: {path}"
+        project_path = project_path_for(path, project_directory)
+        if is_sensitive_path(project_path):
+            return f"editing sensitive path is blocked: {project_path}"
     return None
 
 
@@ -135,6 +146,10 @@ def mcp_denial_reason(tool_name: str, tool_input: Any) -> str | None:
 
 
 def main() -> int:
+    argument_parser = argparse.ArgumentParser()
+    argument_parser.add_argument("project_directory")
+    project_directory = argument_parser.parse_args().project_directory
+
     payload = load_payload()
     if payload is None:
         deny("Malformed PreToolUse hook input")
@@ -150,9 +165,9 @@ def main() -> int:
     if tool_name == "Bash":
         reason = bash_denial_reason(string_field_from(tool_input, "command"))
     elif tool_name == "apply_patch":
-        reason = edit_denial_reason(patch_paths(string_field_from(tool_input, "command")))
+        reason = edit_denial_reason(patch_paths(string_field_from(tool_input, "command")), project_directory)
     elif tool_name in {"Edit", "Write"}:
-        reason = edit_denial_reason([string_field_from(tool_input, "file_path")])
+        reason = edit_denial_reason([string_field_from(tool_input, "file_path")], project_directory)
     elif tool_name.startswith("mcp__"):
         reason = mcp_denial_reason(tool_name, tool_input)
 
