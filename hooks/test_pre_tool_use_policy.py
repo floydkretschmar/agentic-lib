@@ -30,6 +30,8 @@ def setUpModule() -> None:
     SECOND_PROJECT_LINK.symlink_to(PROJECT_DIRECTORY)
     DOCUMENTATION_LINK.symlink_to(PROJECT_DIRECTORY / "docs")
     (PROJECT_DIRECTORY / "docs" / ".env.local").symlink_to(PROJECT_DIRECTORY / "docs" / "settings.txt")
+    (PROJECT_DIRECTORY / "docs" / "key-storage").mkdir()
+    (PROJECT_DIRECTORY / "docs" / ".ssh").symlink_to(PROJECT_DIRECTORY / "docs" / "key-storage")
 
 
 def tearDownModule() -> None:
@@ -117,6 +119,7 @@ class PreToolUsePolicyTest(unittest.TestCase):
             pre_tool_use("Write", {"file_path": f"{SECOND_PROJECT_LINK}/.env"}),
             pre_tool_use("Edit", {"file_path": f"{SECOND_PROJECT_LINK}/.git/config"}),
             pre_tool_use("Write", {"file_path": f"{DOCUMENTATION_LINK}/.env.local"}),
+            pre_tool_use("Write", {"file_path": f"{DOCUMENTATION_LINK}/.ssh/authorized_keys"}),
             pre_tool_use("Write", {"content": "notes"}),
             pre_tool_use("Write", {"file_path": "/etc/hosts"}),
             pre_tool_use("Write", {"file_path": f"{PROJECT_DIRECTORY}/outside-link/notes.md"}),

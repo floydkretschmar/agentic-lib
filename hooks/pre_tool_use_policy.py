@@ -93,17 +93,17 @@ def lexical_project_paths_for(lexical_path: str, project_directory: str) -> list
     real_project_directory = os.path.realpath(project_directory)
     path_parts = PurePosixPath(lexical_path).parts
     for part_count in range(1, len(path_parts) + 1):
-        if os.path.realpath(PurePosixPath(*path_parts[:part_count])) == real_project_directory:
-            return [str(PurePosixPath(*path_parts[part_count:]))]
+        prefix_project_path = os.path.relpath(os.path.realpath(PurePosixPath(*path_parts[:part_count])), real_project_directory)
+        if not is_outside_project(prefix_project_path):
+            return [str(PurePosixPath(prefix_project_path, *path_parts[part_count:]))]
     return []
 
 
 def checked_paths_for(path: str, project_directory: str) -> list[str]:
     lexical_path = os.path.normpath(path)
-    entry_path = os.path.join(os.path.realpath(os.path.dirname(lexical_path)), os.path.basename(lexical_path))
     resolved_project_paths = [
-        project_path_for(resolved_path, project_directory)
-        for resolved_path in (os.path.realpath(path), os.path.realpath(lexical_path), entry_path)
+        project_path_for(os.path.realpath(unresolved_path), project_directory)
+        for unresolved_path in (path, lexical_path)
     ]
     return lexical_project_paths_for(lexical_path, project_directory) + resolved_project_paths
 
