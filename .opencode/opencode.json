@@ -1,0 +1,118 @@
+{
+  "plugins": [
+    {
+      "package": "./plugins/pre-tool-use",
+      "options": {
+        "safetyHookCommand": [
+          "sh",
+          "-c",
+          "\"$(git rev-parse --show-toplevel)/run.sh\" safety-hook"
+        ],
+        "safetyHookTimeoutMilliseconds": 5000,
+        "rtkRewriteCommand": [
+          "rtk",
+          "hook",
+          "opencode"
+        ],
+        "rtkRewriteTimeoutMilliseconds": 3000
+      }
+    }
+  ],
+  "permissions": [
+    {
+      "action": "external_directory",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".git/*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*/.git/*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".ssh/*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*/.ssh/*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".env",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*/.env",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".env.local",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*/.env.local",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".env.production",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*/.env.production",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "id_rsa",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*/id_rsa",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "id_ed25519",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*/id_ed25519",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*.pem",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*.key",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*.p12",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*.pfx",
+      "effect": "deny"
+    }
+  ]
+}

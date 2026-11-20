@@ -1,6 +1,39 @@
 {
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false
+  },
+  "permissions": {
+    "blockWritesOutsideWorkingDirectories": true,
+    "deny": [
+      "Edit(**/.git/**)",
+      "Edit(**/.ssh/**)",
+      "Edit(**/.env)",
+      "Edit(**/.env.local)",
+      "Edit(**/.env.production)",
+      "Edit(**/id_rsa)",
+      "Edit(**/id_ed25519)",
+      "Edit(**/*.pem)",
+      "Edit(**/*.key)",
+      "Edit(**/*.p12)",
+      "Edit(**/*.pfx)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/run.sh\" safety-hook",
+            "timeout": 5,
+            "onFailure": "block",
+            "statusMessage": "Dangerous tool-use guard"
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [
