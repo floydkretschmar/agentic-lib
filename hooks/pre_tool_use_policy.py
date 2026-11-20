@@ -101,9 +101,10 @@ def lexical_project_paths_for(lexical_path: str, project_directory: str) -> list
 
 def checked_paths_for(path: str, project_directory: str) -> list[str]:
     lexical_path = os.path.normpath(path)
+    entry_path = os.path.join(os.path.realpath(os.path.dirname(lexical_path)), os.path.basename(lexical_path))
     resolved_project_paths = [
-        project_path_for(os.path.realpath(unresolved_path), project_directory)
-        for unresolved_path in (path, lexical_path)
+        project_path_for(resolved_path, project_directory)
+        for resolved_path in (os.path.realpath(path), os.path.realpath(lexical_path), entry_path)
     ]
     return lexical_project_paths_for(lexical_path, project_directory) + resolved_project_paths
 
@@ -151,8 +152,8 @@ def bash_denial_reason(command: str) -> str | None:
 
 
 def edit_denial_reason(paths: Iterable[str], working_directory: str, project_directory: str) -> str | None:
-    if not working_directory:
-        return "editing without a working directory in the hook input is blocked"
+    if not os.path.isabs(working_directory):
+        return "editing without an absolute working directory in the hook input is blocked"
     for path in paths:
         if not path:
             return "editing without a path in the hook input is blocked"
