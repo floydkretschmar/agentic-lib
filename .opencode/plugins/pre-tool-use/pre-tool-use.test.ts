@@ -74,43 +74,43 @@ test("lets an allowed tool call run with the rtk rewrite applied to shell comman
       tool: "shell",
       input: { command: "git status" },
       optionOverrides: {},
-      pluginDirectory: projectDirectory,
+      locationDirectory: projectDirectory,
       expectedInput: { command: "--agent|build|git status" },
     },
     {
       tool: "edit",
       input: { path: glossaryPath, oldString: "a", newString: "b" },
       optionOverrides: {},
-      pluginDirectory: projectDirectory,
+      locationDirectory: projectDirectory,
       expectedInput: { path: glossaryPath, oldString: "a", newString: "b" },
     },
     {
       tool: "edit",
       input: { path: "../README.md", oldString: "a", newString: "b" },
       optionOverrides: {},
-      pluginDirectory: documentationDirectory,
+      locationDirectory: documentationDirectory,
       expectedInput: { path: "../README.md", oldString: "a", newString: "b" },
     },
-    { tool: "read", input: { path: ".env" }, optionOverrides: {}, pluginDirectory: projectDirectory, expectedInput: { path: ".env" } },
+    { tool: "read", input: { path: ".env" }, optionOverrides: {}, locationDirectory: projectDirectory, expectedInput: { path: ".env" } },
     {
       tool: "shell",
       input: { command: "git status" },
       optionOverrides: { rtkRewriteCommand: failingCommand },
-      pluginDirectory: projectDirectory,
+      locationDirectory: projectDirectory,
       expectedInput: { command: "git status" },
     },
     {
       tool: "shell",
       input: { command: "git status" },
       optionOverrides: { rtkRewriteCommand: commandPrintingEmptyObject },
-      pluginDirectory: projectDirectory,
+      locationDirectory: projectDirectory,
       expectedInput: { command: "git status" },
     },
   ]
 
   for (const allowedCall of allowedCalls) {
     await context.test(`${allowedCall.tool} ${JSON.stringify(allowedCall.input)} ${JSON.stringify(allowedCall.optionOverrides)}`, async () => {
-      const executeBefore = await setUpPlugin(pluginOptionsWith(allowedCall.optionOverrides), allowedCall.pluginDirectory)
+      const executeBefore = await setUpPlugin(pluginOptionsWith(allowedCall.optionOverrides), allowedCall.locationDirectory)
       const event = toolEvent(allowedCall.tool, allowedCall.input)
 
       await executeBefore(event)

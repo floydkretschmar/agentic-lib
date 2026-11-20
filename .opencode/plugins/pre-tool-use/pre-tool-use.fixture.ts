@@ -45,10 +45,10 @@ export function pluginOptionsWithout(optionName: string): Record<string, unknown
   return pluginOptions
 }
 
-export async function setUpPlugin(pluginOptions: Record<string, unknown>, pluginDirectory: string): Promise<ToolHookCallback> {
+export async function setUpPlugin(pluginOptions: Record<string, unknown>, locationDirectory: string): Promise<ToolHookCallback> {
   const registeredHooks = new Map<string, ToolHookCallback>()
   await preToolUsePlugin.setup({
-    location: { directory: pluginDirectory },
+    location: { directory: locationDirectory },
     options: pluginOptions,
     tool: { hook: async (hookName: string, callback: ToolHookCallback) => registeredHooks.set(hookName, callback) },
   })
