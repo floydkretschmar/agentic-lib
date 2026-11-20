@@ -5,6 +5,11 @@ run_test() {
   # JavaScript example:
   #   run package-manager test
   #   run package-manager typecheck
+  python3 -m unittest discover --start-directory "$(git rev-parse --show-toplevel)/.codex/hooks" --pattern 'test_*.py'
+}
+
+run_lint() {
+  # JavaScript example:
   #   run package-manager lint
   :
 }
@@ -21,22 +26,16 @@ run_build() {
   :
 }
 
-rtk_hook() {
-  export RTK_CODEX_HOOK_MODE=deny
-  export RTK_BIN="$(which rtk)"
-  export NO_RTK_BIN="$(which NO_RTK)"
-  python3 "$(git rev-parse --show-toplevel)/.codex/hooks/rtk_hook.py"
-}
-
 safety_hook() {
   python3 "$(git rev-parse --show-toplevel)/.codex/hooks/pre_tool_use_policy.py"
 }
 
 setup_environment() {
-  if command -v rtk >/dev/null 2>&1; then
+  if rtk hook codex --help >/dev/null 2>&1; then
     echo "rtk already available"
   else
-    curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+    echo "Install or upgrade rtk: https://www.rtk-ai.app/docs/getting-started/installation/" >&2
+    exit 1
   fi
 
   if command -v context-mode >/dev/null 2>&1; then
@@ -50,14 +49,14 @@ case "${1:-}" in
   test)
     run_test
     ;;
+  lint)
+    run_lint
+    ;;
   format)
     run_format
     ;;
   build)
     run_build
-    ;;
-  rtk-hook)
-    rtk_hook
     ;;
   safety-hook)
     safety_hook
@@ -66,7 +65,7 @@ case "${1:-}" in
     setup_environment
     ;;
   *)
-    echo "Usage: $0 {test|format|build}" >&2
+    echo "Usage: $0 {test|lint|format|build|safety-hook|setup-environment}" >&2
     exit 2
     ;;
 esac

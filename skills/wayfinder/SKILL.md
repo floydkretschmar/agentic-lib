@@ -23,7 +23,7 @@ The title of an issue is its name. In all text that the human reads, refer to a 
 
 ## The map
 
-The map is one issue with the label `wayfinder:map`. It is the source of truth, and its child issues are the tickets. The [issue tracker](../../../docs/ISSUE-TRACKER.md) document says where the map and its tickets live.
+The map is one issue with the label `wayfinder:map`. It is the source of truth, and its child issues are the tickets. The issue tracker document `docs/ISSUE-TRACKER.md` says where the map and its tickets live.
 
 The map is an index. For each decision, it holds a link and a one-line summary. The details stay in the ticket.
 
@@ -75,7 +75,7 @@ A context pointer is a link to a ticket or asset with a one-line summary.
 
 ## Ticket types
 
-Each ticket is HITL (human in the loop) or AFK (away from keyboard). The agent works on a HITL ticket together with a human, who gives their own answers. The agent works on an AFK ticket alone. A HITL ticket resolves only through that live conversation, so a interview agent must never answer its own questions.
+Each ticket is HITL (human in the loop) or AFK (away from keyboard). The agent works on a HITL ticket together with a human, who gives their own answers. The agent works on an AFK ticket alone. A HITL ticket resolves only through that live conversation, so the agent must never answer its own questions.
 
 - `research` (AFK). Use it when a decision needs a fact from outside the working directory, for example documentation, a third-party API, or a local knowledge base. A `/research` subagent resolves it.
 - `prototype` (HITL). Use it when the main question is how something must look or behave. Build a cheap, rough artifact that gives the discussion something concrete. Examples are an outline, a first draft, a stub, or UI or logic code from the `/prototype` skill. Link the prototype from the ticket.
@@ -109,10 +109,10 @@ In both modes, resolve at most one ticket per session. Research tickets are the 
 The user starts the skill with a loose idea.
 
 1. Define the destination first, because it sets the scope. Run a `/interview` session to find the spec, decision, or change that the map leads to.
-2. Grill again, breadth-first this time, to find the open decisions and the first steps that are possible now. If nothing goes to Not yet specified, the whole job fits in one session and needs no map. In that case, stop and ask the user how to continue.
+2. Run `/interview` again, breadth-first this time, to find the open decisions and the first steps that are possible now. If nothing goes to Not yet specified, the whole job fits in one session and needs no map. In that case, stop and ask the user how to continue.
 3. Create the map with the label `wayfinder:map`. Fill in Destination and Notes. Leave Decisions so far empty. Write the unclear parts in Not yet specified.
 4. Create the tickets that you can specify now, as child issues of the map. Then add the blocking relations in a second pass, because an issue needs an id before other issues can refer to it. Everything else stays in Not yet specified.
-5. Start one `/research` subagent for each new `research` ticket, all in parallel. Each subagent saves its findings on a throwaway `research/<name>` branch and adds a context pointer to them on the ticket.
+5. Start one `/research` subagent for each new `research` ticket, all in parallel. Each subagent adds a context pointer to its findings on the ticket.
 6. Stop. Charting takes one session, and you do not resolve a ticket yourself.
 
 ### Work through the map

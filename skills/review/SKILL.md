@@ -30,7 +30,7 @@ Spawn two parallel subagents in parallel to execute review as well as manual QA 
 Have review-agent review the code with the prompt in [review-prompt.md](review-prompt.md) word for word. Replace only the placeholders.
 
 #### Step 3b: Full manual regression test
-Have a new qa-agent manually test the entire application scope and prove that the change introduced no visual or feature regressions. Use the manual testing steps defined in the implementation plans `Manual verification` as the absolute minimal baseline, but engage in rigorous explorative edge case testing as well. The qa-agent must return a summary of their findings following the exact [review-result-template.md](review-result-template.md).
+Have a new qa-agent manually test the entire application scope and prove that the change introduced no visual or feature regressions. Use the manual testing steps defined in the implementation plans `Manual verification` as the absolute minimal baseline, but engage in rigorous explorative edge case testing as well.
 
 ### Step 4: Consolidate results
-Consolidate both agents results into one review result that follows [review-result-template.md](review-result-template.md). If either reviewer reports `NEEDS_CHANGES`, the final verdict is `NEEDS_CHANGES`. Return the consolidated review result.
+Consolidate both agents results into one review result that follows [review-result-template.md](review-result-template.md). If the review-agent reports `NEEDS_CHANGES`, or the qa-agent reports `QA: FAILED` or `QA: BLOCKED`, the final verdict is `NEEDS_CHANGES`. Return the consolidated review result.

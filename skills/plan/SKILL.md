@@ -11,7 +11,7 @@ Start from the question "What is the user trying to do?". Are they trying to fix
 
 ### Step 2: Explore the codebase
 
-Explore the repository using codebase-explorere-agents to make sure that the assertions in the conversation are correct, and to understand the current state of the codebase. Check existing documentation such as ADRs or other project documentation.
+Explore the repository using codebase-researcher-agents to make sure that the assertions in the conversation are correct, and to understand the current state of the codebase. Check existing documentation such as ADRs or other project documentation.
 
 ### Step 3: Interview the user for deeper
 
@@ -19,7 +19,7 @@ If the user wants to do anything bigger than a small bugfix or layout adjustment
 
 ### Step 4: Explore the web
 
-If the user refers to external information that you do not know, such as products, web pages, or design patterns, use web-research-agents to verify relevant information. Never guess from your internal memory when concrete apis, contracts and verifiable information is concerned.
+If the user refers to external information that you do not know, such as products, web pages, or design patterns, use web-researcher-agents to verify relevant information. Never guess from your internal memory when concrete apis, contracts and verifiable information is concerned.
 
 ### Step 5: Create a spec
 Have at least one architect-agents produce a complete design approach for implementing the requested feature. If the user plans a big change, have at least two architect-agents create radically different design approaches. Scale the number of agents and approaches with the complexity of the feature. Each subagent must sketch the modules it wants to create or modify and the public interfaces where the feature will be tested. They should prefer existing public interfaces to new ones, and use as few public interfaces as possible, ideally one.
@@ -79,7 +79,7 @@ Iterate until the user approves the breakdown.
 
 ### Step 9: Write the implementation plan file
 
-Write the implementation plan file `docs/implementation plans/YYYY-MM-DD-<feature-name>.md` with the EXACT template from [implementation-plan-template.md](implementation-plan-template.md), and replace only its placeholders.
+Write the implementation plan file `docs/implementation-plans/YYYY-MM-DD-<feature-name>.md` with the EXACT template from [implementation-plan-template.md](implementation-plan-template.md), and replace only its placeholders.
 
 ### Step 10: Implementation plan review
 

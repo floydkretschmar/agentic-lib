@@ -2,18 +2,16 @@
 multi_agent = true
 hooks = true
 
-[agents.backend_developer]
-config_file = "./agents/backend_developer.toml"
-[agents.business_analyst]
-config_file = "./agents/business_analyst.toml"
-[agents.frontend_developer]
-config_file = "./agents/frontend_developer.toml"
-[agents.software_architect]
-config_file = "./agents/software_architect.toml"
-[agents.qa_engineer]
-config_file = "./agents/qa_engineer.toml"
-[agents.review_developer]
-config_file = "./agents/review_developer.toml"
+[agents.architect-agent]
+config_file = "./agents/architect-agent.toml"
+[agents.codebase-researcher-agent]
+config_file = "./agents/codebase-researcher-agent.toml"
+[agents.qa-agent]
+config_file = "./agents/qa-agent.toml"
+[agents.review-agent]
+config_file = "./agents/review-agent.toml"
+[agents.web-researcher-agent]
+config_file = "./agents/web-researcher-agent.toml"
 
 [mcp_servers.context-mode]
 command = "context-mode"
@@ -28,20 +26,20 @@ description = "Blocks unsafe tool usage"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = '"$(git rev-parse --show-toplevel)/run.sh safety-hook"'
+command = '"$(git rev-parse --show-toplevel)/run.sh" safety-hook'
 timeout = 5
 statusMessage = "Dangerous tool-use guard"
 
 [[hooks.PreToolUse]]
 matcher = "^Bash$"
-displayName = "RTK Codex Guard"
-description = "Blocks supported noisy Bash commands and suggests RTK retries."
+displayName = "RTK rewrite"
+description = "Rewrites supported Bash commands to their RTK equivalents."
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = '"$(git rev-parse --show-toplevel)/run.sh rtk-hook"'
+command = "rtk hook codex"
 timeout = 5
-statusMessage = "Suggesting RTK for noisy command"
+statusMessage = "Rewriting command with RTK"
 
 [[hooks.PreToolUse]]
 matcher = "local_shell|shell|shell_command|exec_command|Bash|Shell|apply_patch|Edit|Write|grep_files|ctx_execute|ctx_execute_file|ctx_batch_execute|ctx_fetch_and_index|ctx_search|ctx_index|mcp__"

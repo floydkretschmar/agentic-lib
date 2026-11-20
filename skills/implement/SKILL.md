@@ -1,13 +1,13 @@
 ---
 name: implement
-description: Use it after a implementation plan exists and the user is ready to start implementation.
+description: Use it after an implementation plan exists and the user is ready to start implementation.
 ---
 
 # Execute skill
 Execute an implementation plan until all phases are complete. Follow these steps:
 
 1. Gather context
-2. Implement one phase at a time until ALL phases in the spec are done
+2. Implement one phase at a time until ALL phases in the implementation plan are done
 3. Final review
 4. Full manual regression test
 
@@ -32,16 +32,16 @@ Start from the conversation context. Then:
 
 ### Step 2: Implementation
 
-Execute each incomplete phase with TDD using the `tdd` skill. After each phase pause and have the user review the changes. 
+Execute each incomplete phase with TDD using the `tdd` skill. Commit your changes after each phase using the commit title "Phase [N]: [One line change description]" and the body of the commit naming the most important changes in bullet points.
 
 ### Step 3: Implementation review gate
 
 Invoke /review for a final full review and manual quality control gate of the entire branch, not only of the changes since the last PR or another checkpoint. FOLLOW THE EXACT INSTRUCTIONS IN THE REVIEW SKILL.
 
-- If the review returns `REVIEW: PASSED`, proceed to Step 4.
-- If the review returns `REVIEW: NEEDS_CHANGES`, decide whether the issues are a regression within the overall spec scope:
-    - If they are a blocking finding, add them under `Review findings` in the spec. 
-    - If they are a code quality finding, judge if they qualify as a boy scout commit. If they do, add them under `Review findings` in the spec.
+- If the review returns `**Verdict:** PASSED`, proceed to Step 4.
+- If the review returns `**Verdict:** NEEDS_CHANGES`, decide whether the issues are a regression within the overall spec scope:
+    - If they are a blocking finding, add them under `Review findings` in the implementation plan. 
+    - If they are a code quality finding, judge if they qualify as a boy scout commit. If they do, add them under `Review findings` in the implementation plan.
     - If they are a finding that require a decision by the user, collect them until the repeated review cycle is passing and present them in bulk as described below.
     - Everything else is to be ignored.
 

@@ -29,7 +29,7 @@ Separately, list as open decisions each behavior that the implementation settled
 ## Code quality review
 The measures below tell you where to look. Report only what you can show in the code.
 
-1. **Correctness**: logic errors, unhandled edge cases (empty, missing, boundary, duplicate, repeated or concurrent calls), and regressions in existing callers of changed code. Judge against what the code evidently intends. The business reviewer decides whether that intent matches the user stories.
+1. **Correctness**: logic errors, unhandled edge cases (empty, missing, boundary, duplicate, repeated or concurrent calls), and regressions in existing callers of changed code. Judge against what the code evidently intends. 
 2. **Error handling**: failures that are swallowed, leave partial state, or surface nowhere, catch blocks that are broader than the failure they expect, and fallback defaults that hide a missing required value.
 3. **Data integrity**: transaction boundaries, partial writes, migrations that lose or orphan data, incompatible changes to persisted formats or public contracts.
 4. **Security**: missing authorization on new paths, injection (SQL, command, path, markup), unvalidated input crossing a trust boundary, secrets in code or logs, weak or home-made cryptography, unvetted new dependencies.

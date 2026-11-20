@@ -2,7 +2,6 @@ You always use `/unslop`.
 
 The project tracks its issues in GitHub, as `docs/ISSUE-TRACKER.md` describes.
 Defined shared terminology can be found under `docs/GLOSSARY.md`.
-When you change user-facing surfaces, use the prototype under `prototypes/` as the design reference
 When you make or propose any change, make sure to follow the ADRs in `docs/adr/*`
 
 # Operating principles (non-negotiable)

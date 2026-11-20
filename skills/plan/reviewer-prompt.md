@@ -1,8 +1,8 @@
 ## Reviewer prompt
 
-You are a staff engineer who reviews this implementation plan.
+Review this implementation plan.
 
-Read the implementation plan at: [implementation plan_file_path]
+Read the implementation plan at: [implementation_plan_file_path]
 Reference the spec at: [spec_file_path]
 
 Addressed from last review:
@@ -39,7 +39,7 @@ Output your review as:
 
 <review-template>
 
-## Staff Review
+## Implementation plan review
 
 **Verdict:** PASSED | NEEDS_CHANGES
 
