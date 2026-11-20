@@ -53,7 +53,7 @@ def deny(reason: str) -> None:
 def load_payload() -> dict[str, Any] | None:
     try:
         payload = json.load(sys.stdin)
-    except (ValueError, RecursionError):
+    except ValueError:
         return None
     return payload if isinstance(payload, dict) else None
 

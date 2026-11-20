@@ -38,7 +38,7 @@ The subagents are `architect-agent`, `codebase-researcher-agent`, `web-researche
 
 ## Setup
 
-Requirements: [rtk](https://www.rtk-ai.app/docs/getting-started/installation/) 1.2.1 or later, Python 3 and the `gh` CLI. Claude Code needs version 2.1.314 or later and, on Linux, `bubblewrap` and `socat` for its sandbox; without them it refuses to start in the project. Codex uses `bubblewrap` too, and a user config that sets `sandbox_mode` replaces the project's permission profile. opencode needs version 2.3.x, and its plugin tests need Node 24.
+Requirements: [rtk](https://www.rtk-ai.app/docs/getting-started/installation/) 1.2.1 or later, Python 3 and the `gh` CLI. Claude Code needs version 2.1.314 or later and, on Linux, `bubblewrap` and `socat` for its sandbox; without them it refuses to start in the project. Codex uses `bubblewrap` too, and a user config that sets `sandbox_mode` replaces the project's permission profile. opencode needs version 2.3.x, and its plugin tests need Node 24. In Claude Code, the file tools cannot write outside the project, and shell commands cannot change `skills/` or `.claude/agents`; edit them with the file tools. Codex loads `.codex/config.toml` only for trusted projects, and its permission profile also blocks reading `.env` and key files.
 
 1. Copy the files into the root of your project. Leave out `.claude`, `.codex` or `.opencode` for each tool that you do not use.
 2. Run `./run.sh setup-environment`. It checks that `rtk` is installed.

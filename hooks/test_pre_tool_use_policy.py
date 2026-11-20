@@ -93,11 +93,13 @@ class PreToolUsePolicyTest(unittest.TestCase):
             pre_tool_use("Write", {"file_path": ".env"}),
             pre_tool_use("MultiEdit", {"file_path": "docs/.ENV.LOCAL", "edits": []}),
             pre_tool_use("Write", {"file_path": "/etc/hosts"}),
-            pre_tool_use("Write", {"file_path": "../outside.md"}),
+            pre_tool_use("apply_patch", patch("*** Add File: ../outside.md")),
             pre_tool_use("Write", {"file_path": "outside-link/notes.md"}),
             pre_tool_use("NotebookEdit", {"notebook_path": f"{OUTSIDE_DIRECTORY}/notes.ipynb"}),
             pre_tool_use("apply_patch", patch("*** Delete File: .git/config")),
             pre_tool_use("apply_patch", patch("*** Update File: notes.md", "*** Move to: .git/hooks/pre-commit")),
+            pre_tool_use("apply_patch", patch("*** Update File: docs/GLOSSARY.md", "  *** Move to: .GIT/config")),
+            pre_tool_use("apply_patch", patch("*** Add File: docs\r/../.env")),
             pre_tool_use("apply_patch", {"command": ""}),
             pre_tool_use("Write", {"content": "notes"}),
             without_working_directory("Write", {"file_path": "docs/notes.md"}),
@@ -109,7 +111,7 @@ class PreToolUsePolicyTest(unittest.TestCase):
         for stdin in (
             pre_tool_use("Write", {"file_path": f"{PROJECT_DIRECTORY}/docs/GLOSSARY.md"}),
             pre_tool_use("Edit", {"file_path": f"{PROJECT_LINK}/docs/GLOSSARY.md"}),
-            pre_tool_use("apply_patch", patch("*** Update File: docs/GLOSSARY.md", "*** Add File: docs/notes.md")),
+            pre_tool_use("apply_patch", patch("*** Update File: docs/GLOSSARY.md", f"*** Add File: {PROJECT_DIRECTORY}/docs/notes.md")),
         ):
             with self.subTest(stdin=stdin):
                 self.assert_allowed(run_hook(stdin))

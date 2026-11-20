@@ -260,11 +260,11 @@ Replace the Phase 5 hook with `main`'s hook plus one edit-path check: the path j
 9. Run `git status`. If opencode created cache files inside `.opencode`, they appear here and need a `.gitignore` entry.
 10. Start Claude Code in the repository and ask it to run `sudo -n true`. The call fails with "sudo commands require explicit human approval outside this hook".
 11. Ask Claude Code to add a line to `docs/GLOSSARY.md`. The edit succeeds. Revert it afterwards.
-12. Ask Claude Code to write a file to `/tmp`. The call fails with "editing sensitive path is blocked".
+12. Ask Claude Code to write a file to `/tmp`. The call is refused, by the hook ("editing outside the project is blocked") or by `blockWritesOutsideWorkingDirectories`.
 13. Ask Claude Code to run `git status`. It runs as `rtk git status`.
 14. Install `bubblewrap` and `socat`, start Claude Code, and ask it to run `touch ~/sandbox-probe`. The command fails with a read-only file system error.
-15. Start Codex in the repository and ask it to create `.env`. The sandbox refuses the write.
-16. In opencode, ask for a file outside the project. The `external_directory` rule denies it.
+15. Start Codex in the repository and ask it to run `touch ~/codex-probe`. The sandbox refuses the write. With an existing `.env`, ask Codex to print it; the permission profile denies the read.
+16. In opencode, with the plugin removed from `.opencode/opencode.json` in a scratch copy, ask it to edit an existing `.env` and to read a file outside the project. The permission rules deny both.
 
 # Task tracking
 - [x] Step 1.1
@@ -344,3 +344,9 @@ Replace the Phase 5 hook with `main`'s hook plus one edit-path check: the path j
   - [x] Shells fed indirectly (`echo … | bash`, `cat <<EOF | sh`, `bash -c "$(cat <<EOF…)"`, `env -S`), zsh `=sudo`, `git` with global options, `git checkout -- .`, downloads run by any interpreter, `rm ..` and `rm ~/x` -> quoted text and heredocs count as commands when a shell or `eval` runs, `env -S` arguments are commands, program names drop a leading `=` or `<`, the former regex patterns became word rules
   - [x] False denials of the commit idiom with an apostrophe, patch-marker searches, `grep sudo`, and `rm … 2> /dev/null` -> nested substitution reader, patch rules only for texts with header paths, read-only programs whose words are data, redirections dropped from arguments
   - [x] `MultiEdit` was unchecked -> mapped to `file_path`
+- Implementation review and manual test of Phase 6
+  - [x] The Claude Code sandbox mounts placeholder entries that break `git add -A` and `git status`, and keeps `skills/` and `.claude/agents` read-only for shell commands -> the user kept the sandbox; `.gitignore` lists the placeholders, and the spec and README describe both effects
+  - [x] Patch header trimming, line-feed splitting and case-insensitive path parts had no failing test, and two patch cases had regressed -> an indented `Move to: .GIT/config` header, a carriage return inside a header path, the `../outside.md` case as a patch, and an absolute `Add File` in the allowed patch
+  - [x] Undocumented behavior: case-insensitive names in the deletion and MCP checks, Codex deny entries blocking reads and covering only existing files on Linux, opencode `external_directory` covering reads and shell commands, Codex project trust -> stated in the spec and README
+  - [x] Manual steps 12, 15 and 16 expected the wrong text or did not exercise the layer they name -> corrected
+  - [x] A Phase 5 leftover caught `RecursionError` -> removed
