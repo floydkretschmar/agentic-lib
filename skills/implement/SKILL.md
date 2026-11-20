@@ -11,7 +11,7 @@ Execute an implementation plan until all phases are complete. Follow these steps
 3. Final review
 4. Full manual regression test
 
-## Quality gates
+### Quality gates
 
 - Touch only ONE phase
 - Follow TDD (test first) with the /tdd skill
