@@ -88,7 +88,7 @@ Spawn a fresh review-agent to review both the spec and the implementation plan w
 ### Step 11: Incorporate feedback
 
 If the reviewer returns `NEEDS_CHANGES`:
-1. Use the `interview` to clarify strategic questions that the reviewer might have brought up
+1. Use the `interview` skill to clarify strategic questions that the reviewer might have brought up
 2. Update the implementation plan. Strongly prefer edits that shorten or modify existing specifications over adding new ones
 3. Run a fresh reviewer
 4. Repeat until the verdict is `PASSED`
