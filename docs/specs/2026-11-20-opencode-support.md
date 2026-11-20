@@ -1,10 +1,10 @@
 ## Problem Statement
 
-The agent setup in this repository works for Claude Code and Codex. A developer who uses opencode gets the project rules from `AGENTS.md`, but no project subagents, no protection from the safety hook, no rtk command rewriting and no context-mode. The developer has to build that setup by hand, and it drifts from the setup of the other two tools. Claude Code runs without the safety hook that Codex uses.
+The agent setup in this repository works for Claude Code and Codex. A developer who uses opencode gets the project rules from `AGENTS.md`, but no project subagents, no protection from the safety hook and no rtk command rewriting. The developer has to build that setup by hand, and it drifts from the setup of the other two tools. Claude Code runs without the safety hook that Codex uses.
 
 ## Solution
 
-The repository ships an opencode V2 configuration next to the Claude Code and Codex configurations. In opencode, a developer gets the same skills, the same five read-only subagents on Anthropic models, the same safety rules for shell commands and file edits, rtk rewriting of shell commands, and the context-mode plugin. The safety rules stay in the one Python hook that Codex already uses, and Claude Code runs that hook too.
+The repository ships an opencode V2 configuration next to the Claude Code and Codex configurations. In opencode, a developer gets the same skills, the same five read-only subagents on Anthropic models, the same safety rules for shell commands and file edits, and rtk rewriting of shell commands. The safety rules stay in the one Python hook that Codex already uses, which moves out of `.codex` so that Claude Code and opencode can run it without the Codex folder. The repository drops context-mode.
 
 ## User Stories
 
@@ -20,21 +20,20 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
 10. As an opencode user, I want rtk to rewrite allowed shell commands, so that command output costs fewer tokens.
 11. As an opencode user, I want a shell command to run unchanged when rtk fails, so that rtk problems never stop work.
 12. As an opencode user, I want the safety hook to judge the command the model wrote, before rtk rewrites it, so that a rewrite cannot hide a dangerous command from the guard.
-13. As an opencode user, I want context-mode loaded as an opencode plugin, so that I get the same context savings as in Codex.
-14. As a Codex user, I want patches that move a file onto a sensitive path blocked, so that a `Move to` line cannot bypass the guard.
-15. As a maintainer, I want the plugin's commands and timeouts in the opencode configuration file, so that no command or timeout is a literal in code.
-16. As a maintainer, I want `./run.sh test` to run the plugin tests next to the hook tests, so that one command verifies both.
-17. As a maintainer, I want `./run.sh setup-environment` to check that the installed rtk supports opencode, so that a too-old rtk fails at setup and not in a session.
-18. As a new user, I want the README to describe the opencode setup and its requirements, so that I can set it up without reading the configuration files.
-19. As a Claude Code user, I want every tool call checked by the same safety hook as in Codex and opencode, so that the agent cannot run destructive commands or edit sensitive paths.
-20. As a Claude Code user, I want edits to project files allowed although Claude Code passes absolute paths, so that the guard does not block normal work.
-21. As a Claude Code user, I want a tool call blocked when the safety hook fails, times out or returns unreadable output, so that a broken guard never lets a call through.
-22. As a Codex user, I want patches that leave the project through a relative `..` path blocked, and patches with an absolute path inside the project allowed, so that the guard judges where a patch writes and not how its path is spelled.
+13. As a Codex user, I want patches that move a file onto a sensitive path blocked, so that a `Move to` line cannot bypass the guard.
+14. As a maintainer, I want the plugin's commands and timeouts in the opencode configuration file, so that no command or timeout is a literal in code.
+15. As a maintainer, I want `run.sh` and the safety hook to use only files that every project has, so that a project that keeps only some of `.claude`, `.codex` and `.opencode` still works.
+16. As a new user, I want the README to describe the opencode setup, its requirements and the command that runs the plugin tests, so that I can set it up without reading the configuration files.
+17. As a maintainer, I want context-mode removed from all three setups, so that rtk is the only command rewriter to install and maintain.
+18. As a Claude Code user, I want every tool call checked by the same safety hook as in Codex and opencode, so that the agent cannot run destructive commands or edit sensitive paths.
+19. As a Claude Code user, I want edits to project files allowed although Claude Code passes absolute paths, so that the guard does not block normal work.
+20. As a Claude Code user, I want a tool call blocked when the safety hook fails, times out or returns unreadable output, so that a broken guard never lets a call through.
+21. As a Codex user, I want patches that leave the project through a relative `..` path blocked, and patches with an absolute path inside the project allowed, so that the guard judges where a patch writes and not how its path is spelled.
 
 ## Implementation Decisions
 
 - **Target version.** opencode V2 (2.3.x) with the V2 configuration keys (`plugins`, `agents` frontmatter with `permissions`), the V2 plugin shape (default export with `id` and `setup`) and the V2 tool names (`shell`, `edit`, `write`, `patch`).
-- **Configuration file.** One opencode configuration file inside the `.opencode` folder, next to the plugins and agents, in the same way that Codex keeps its configuration inside `.codex`. It lists two plugins in this order: the project pre-tool-use plugin with its options, then `context-mode`. It has no MCP, permissions, instructions or skills entries.
+- **Configuration file.** One opencode configuration file inside the `.opencode` folder, next to the plugins and agents, in the same way that Codex keeps its configuration inside `.codex`. It lists one plugin, the project pre-tool-use plugin with its options. It has no MCP, permissions, instructions or skills entries.
 - **Pre-tool-use plugin.** One local plugin, stored as a folder so that its tests and fixture are not loaded as plugins. Its public interface is its default export, `{ id, setup(context) }`. `setup` reads four required options (safety hook command, safety hook timeout, rtk rewrite command, rtk rewrite timeout) and fails if one is missing or has the wrong type. It then registers one `execute.before` tool hook. The plugin runs both commands in the project directory from the plugin context and has no dependencies beyond Node built-ins.
 - **Hook sequence for each tool call.**
 
@@ -45,7 +44,7 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
        read input field (missing => block)
                     │
                     v
-       edit/write: make path project-relative if inside the project
+       edit/write: resolve path against the project directory
                     │
                     v
        safety hook ──deny / error / timeout / bad output──> block with reason
@@ -62,22 +61,22 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
 
 - **Tool mapping to the hook payload.** Every payload has the event name `PreToolUse`, a tool name and a tool input. `shell` and `bash` map to `Bash` with the command. `patch` maps to `apply_patch` with the patch text as the command. `edit` maps to `Edit` and `write` maps to `Write`, each with the normalized path as `file_path`. All other tools, including MCP tools, pass through unchecked.
 - **Path contract.** The safety hook owns the path semantics for `Edit`, `Write` and patch paths. `run.sh safety-hook` passes the git top level as the project directory argument. The hook resolves each path against it, checks a path inside the project as a relative path, and denies a path outside it under the existing absolute-path rule. Shell `rm` arguments and MCP tool arguments keep the existing rule. The opencode plugin resolves an opencode path against the project directory from the plugin context and sends the absolute path.
-- **Safety hook.** The hook stays the single source of the rules and stays reachable only through `run.sh safety-hook`. It gains a branch that checks the `file_path` of `Edit` and `Write` calls with the existing sensitive-path rule. It reuses the existing input reader and the existing patch denial path instead of adding parallel functions. The patch path reader also reads `Move to` targets. Both changes are approved by the user as security changes.
+- **Safety hook.** The hook stays the single source of the rules and stays reachable only through `run.sh safety-hook`. It moves with its tests from `.codex/hooks` to a root `hooks` folder next to `skills`, so that no tool folder depends on another. It gains a branch that checks the `file_path` of `Edit` and `Write` calls with the existing sensitive-path rule. It reuses the existing input reader and the existing patch denial path instead of adding parallel functions. The patch path reader also reads `Move to` targets. Both changes are approved by the user as security changes.
 - **rtk contract.** The plugin calls the rtk rewrite command with `--agent`, the agent name and the original command as one argument. rtk answers with JSON that holds a `command`, or with an empty object. Verified with rtk 1.2.1.
 - **Claude Code.** `.claude/settings.json` runs the safety hook for every tool (matcher `*`) with the same command and timeout as Codex and with `onFailure: "block"`, next to the existing `rtk hook claude` hook. Claude Code runs matching hooks in parallel, and a deny takes precedence over the rtk rewrite, so a rewrite cannot hide a dangerous command from the guard.
 - **Subagents.** Five V2 agent files with mode `subagent`, a permission rule that denies the `edit` action for every resource, and the same prompt body as the Claude Code agent. Models: architect `anthropic/claude-fable-5-2#high`; qa and review `anthropic/claude-opus-5-5#high`; codebase researcher and web researcher `anthropic/claude-opus-5-5#medium`.
 - **Skills.** A `.opencode/skills` symlink to the shared skills folder, in the same way as the existing Claude Code and Codex symlinks. It gives the project skills a higher precedence than global opencode skills and does not depend on opencode's Claude compatibility settings.
-- **context-mode.** Loaded only as an opencode plugin by package name. opencode installs it. The plugin registers the `ctx_*` tools itself, so no MCP entry is added.
+- **run.sh.** It runs only what every project has. `test` runs the hook tests, and `setup-environment` checks that rtk is installed. It does not run the opencode plugin tests or check tool-specific rtk subcommands. The README names `node --test .opencode/plugins/pre-tool-use/pre-tool-use.test.ts` for the plugin tests.
+- **context-mode.** Removed from the repository: the Codex MCP server and its six context-mode hooks, the opencode plugin entry, and the npm install in `run.sh`.
 - **Dependencies.**
 
   | Dependency | Version | Use |
   | --- | --- | --- |
   | opencode | 2.3.x | Runs the configuration |
   | Node | 24.x (24.16.0 verified) | Runs the plugin tests with built-in type stripping |
-  | rtk | 1.2.1 | `rtk hook opencode` |
-  | context-mode | 2.2.1 at time of writing, unpinned | opencode plugin |
+  | rtk | 1.2.1 | `rtk hook claude`, `rtk hook codex`, `rtk hook opencode` |
   | Python | 3.x, as today | Safety hook |
-| Claude Code | 2.1.295 or later | `onFailure` for the safety hook |
+  | Claude Code | 2.1.295 or later | `onFailure` for the safety hook |
 
 ## Testing Decisions
 
@@ -93,7 +92,7 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
 ## Out of Scope
 
 - Safety checks for opencode MCP tool calls.
-- Moving the safety hook out of `.codex`, or protecting the guard's own files.
+- Protecting the guard's own files.
 - opencode slash command files for the skills.
 - rtk binary discovery outside `PATH`, `RTK_DISABLED`, and Windows support.
 - A generator for the per-tool copies of the agent prompts.

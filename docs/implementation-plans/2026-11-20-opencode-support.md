@@ -7,7 +7,7 @@
 Durable decisions that apply across all phases:
 
 - **Layout**: `.opencode/opencode.json`, `.opencode/plugins/pre-tool-use/{index.ts,pre-tool-use.test.ts,pre-tool-use.fixture.ts}`, `.opencode/agents/<name>.md`, `.opencode/skills -> ../skills`.
-- **Plugin contract**: default export `{ id: "pre-tool-use", setup(context) }`. It reads the required options `safetyHookCommand` (argument array), `safetyHookTimeoutMilliseconds`, `rtkRewriteCommand` (argument array) and `rtkRewriteTimeoutMilliseconds` from `context.options`, and the project directory from `context.location.directory`. It registers its callback with `context.tool.hook("execute.before", callback)` and reads `event.tool`, `event.agent` and the mutable `event.input`. Configured in `.opencode/opencode.json` as `{ "package": "./plugins/pre-tool-use", "options": {...} }`, followed by `"context-mode"`.
+- **Plugin contract**: default export `{ id: "pre-tool-use", setup(context) }`. It reads the required options `safetyHookCommand` (argument array), `safetyHookTimeoutMilliseconds`, `rtkRewriteCommand` (argument array) and `rtkRewriteTimeoutMilliseconds` from `context.options`, and the project directory from `context.location.directory`. It registers its callback with `context.tool.hook("execute.before", callback)` and reads `event.tool`, `event.agent` and the mutable `event.input`. Configured in `.opencode/opencode.json` as the only plugin, `{ "package": "./plugins/pre-tool-use", "options": {...} }`.
 - **Safety command**: `["sh", "-c", "\"$(git rev-parse --show-toplevel)/run.sh\" safety-hook"]`, the same command string as in `.codex/config.toml`. Timeouts 5000 ms for the safety hook and 3000 ms for rtk.
 - **Hook payload**: `{"hook_event_name": "PreToolUse", "tool_name": ..., "tool_input": ...}`. `shell`/`bash` map to `Bash {command}`, `patch` to `apply_patch {command: patchText}`, and `edit`/`write` (opencode V2 input field `path`, not V1 `filePath`) to `Edit`/`Write {file_path}`, with the path resolved against the project directory. Other tools are not sent.
 - **Failure policy**: the safety step fails closed. A spawn error, timeout, non-zero exit or non-empty stdout blocks the call. The rtk step fails open.
@@ -18,7 +18,7 @@ Durable decisions that apply across all phases:
 
 ## Phase 1: Guarded opencode setup
 
-**User stories**: 1–18
+**User stories**: 1–14, 16
 
 ### What to build
 A developer who opens the repository in opencode gets the project skills, the five read-only subagents and the context-mode plugin. Every shell command, edit, write and patch goes through the same Python safety hook as Codex, before rtk rewrites shell commands. `./run.sh test` verifies the plugin and the hook, and the README explains the setup.
@@ -86,7 +86,7 @@ Extend the Python hook with the `Edit`/`Write` branch and the `Move to` target. 
 
 ## Phase 2: Safety hook in Claude Code
 
-**User stories**: 19–22
+**User stories**: 18–21
 
 ### What to build
 Claude Code runs the same safety hook as Codex and opencode for every tool call, and a broken hook blocks the call. The hook takes over the path contract from the opencode plugin: it resolves `Edit`, `Write` and patch paths against the project directory that `run.sh safety-hook` passes, so absolute paths inside the project pass for all three tools and `..` paths that leave the project are denied.
@@ -119,21 +119,48 @@ Give the hook a required project directory argument, and pass the git top level 
 - [x] Each new test fails once when its production line is broken, and passes again after the line is restored.
 - [x] In a running Claude Code session, `sudo -n true` and a `Write` outside the project are denied with the hook's reason, and an `Edit` of a project file succeeds.
 
+---
+
+## Phase 3: Tool-independent layout without context-mode
+
+**User stories**: 15, 16, 17
+
+### What to build
+A project can keep any subset of `.claude`, `.codex` and `.opencode`. The safety hook and its tests move from `.codex/hooks` to a root `hooks` folder, `run.sh` runs only the hook tests and checks only that rtk is installed, and context-mode leaves the Codex configuration, the opencode configuration, `run.sh` and the README. The README names the command for the plugin tests.
+
+#### Step 3.1: Write failing test
+No new tests. The move and the removals change no behavior that a test observes, and the project rules forbid dedicated tests for a cleanup-only change. The existing hook and plugin tests must stay green from the new location.
+
+#### Step 3.2: Implement minimal code
+Move `.codex/hooks/pre_tool_use_policy.py` and its test to `hooks/` and point `run.sh` at them in the same step, because the live Claude Code hook fails closed. Remove the plugin test and the tool-specific rtk checks and the context-mode install from `run.sh`. Remove the context-mode MCP server and hooks from `.codex/config.toml` and the plugin entry from `.opencode/opencode.json`. Update the README.
+
+#### Step 3.3: Verify test passes
+**Run:** `./run.sh test` and `node --test .opencode/plugins/pre-tool-use/pre-tool-use.test.ts`
+**Expect:** PASS (green)
+
+#### Step 3.4: Aggressive refactor
+- `run.sh`: no references to `.claude`, `.codex` or `.opencode`.
+- No remaining `context-mode` or `.codex/hooks` reference outside the docs history.
+
+### Acceptance criteria
+- [x] `./run.sh lint`, `./run.sh test`, `./run.sh build` and the plugin tests pass.
+- [x] In a scratch copy without `.codex` and `.opencode`, `./run.sh test` passes and `./run.sh safety-hook` denies `sudo -n true`.
+- [x] In the running Claude Code session, `sudo -n true` is denied and an `Edit` of a project file succeeds after the move.
+
 # Manual verification
 1. Install opencode 2.3.x and run `./run.sh setup-environment`. It reports that rtk is available.
-2. Start opencode in the repository and run `opencode plugin list`. It lists `pre-tool-use` once and `context-mode`, both loaded without errors. Stop here and report if `pre-tool-use` is missing or listed twice.
+2. Start opencode in the repository and run `opencode plugin list`. It lists `pre-tool-use` once, loaded without errors. Stop here and report if `pre-tool-use` is missing or listed twice.
 3. Type `@` in the prompt. The skills `plan`, `implement`, `review` and the other repository skills appear. If a skill named `plan` exists in `~/.config/opencode/skills`, `@plan` loads the repository's version.
 4. Ask opencode to run `git status`. The tool call shows the command `rtk git status`.
 5. Ask opencode to run `git reset --hard HEAD`. The call fails with "hard git resets are blocked".
 6. Ask opencode to create a file `.env` with any content. The call fails with "editing sensitive path is blocked: .env", and no `.env` exists afterwards.
 7. Ask opencode to add a line to `docs/GLOSSARY.md`. The edit succeeds. Revert it afterwards.
 8. Ask opencode to use the codebase-researcher-agent subagent for a question. It runs on Claude Opus 5.5 and answers. Ask it to edit a file, and it is refused. Repeat the question with the architect-agent subagent, which runs on Claude Fable 5.2.
-9. Ask opencode to list its `ctx_` tools. The context-mode tools appear once.
-10. Run `git status`. If opencode created cache files inside `.opencode`, they appear here and need a `.gitignore` entry.
-11. Start Claude Code in the repository and ask it to run `sudo -n true`. The call fails with "sudo commands require explicit human approval outside this hook".
-12. Ask Claude Code to add a line to `docs/GLOSSARY.md`. The edit succeeds. Revert it afterwards.
-13. Ask Claude Code to write a file to `/tmp`. The call fails with "editing sensitive path is blocked".
-14. Ask Claude Code to run `git status`. It runs as `rtk git status`.
+9. Run `git status`. If opencode created cache files inside `.opencode`, they appear here and need a `.gitignore` entry.
+10. Start Claude Code in the repository and ask it to run `sudo -n true`. The call fails with "sudo commands require explicit human approval outside this hook".
+11. Ask Claude Code to add a line to `docs/GLOSSARY.md`. The edit succeeds. Revert it afterwards.
+12. Ask Claude Code to write a file to `/tmp`. The call fails with "editing sensitive path is blocked".
+13. Ask Claude Code to run `git status`. It runs as `rtk git status`.
 
 # Task tracking
 - [x] Step 1.1
@@ -144,6 +171,10 @@ Give the hook a required project directory argument, and pass the git top level 
 - [x] Step 2.2
 - [x] Step 2.3
 - [x] Step 2.4
+- [x] Step 3.1
+- [x] Step 3.2
+- [x] Step 3.3
+- [x] Step 3.4
 
 # Review findings:
 - Step 1

@@ -5,8 +5,7 @@ run_test() {
   # JavaScript example:
   #   run package-manager test
   #   run package-manager typecheck
-  python3 -m unittest discover --start-directory "$(git rev-parse --show-toplevel)/.codex/hooks" --pattern 'test_*.py'
-  node --test "$(git rev-parse --show-toplevel)/.opencode/plugins/pre-tool-use/pre-tool-use.test.ts"
+  python3 -m unittest discover --start-directory "$(git rev-parse --show-toplevel)/hooks" --pattern 'test_*.py'
 }
 
 run_lint() {
@@ -29,21 +28,15 @@ run_build() {
 
 safety_hook() {
   project_directory="$(git rev-parse --show-toplevel)"
-  python3 "$project_directory/.codex/hooks/pre_tool_use_policy.py" "$project_directory"
+  python3 "$project_directory/hooks/pre_tool_use_policy.py" "$project_directory"
 }
 
 setup_environment() {
-  if rtk hook codex --help >/dev/null 2>&1 && rtk hook opencode --help >/dev/null 2>&1; then
+  if command -v rtk >/dev/null 2>&1; then
     echo "rtk already available"
   else
-    echo "Install or upgrade rtk: https://www.rtk-ai.app/docs/getting-started/installation/" >&2
+    echo "Install rtk: https://www.rtk-ai.app/docs/getting-started/installation/" >&2
     exit 1
-  fi
-
-  if command -v context-mode >/dev/null 2>&1; then
-    echo "context-mode already available"
-  else
-    npm install -g context-mode
   fi
 }
 
