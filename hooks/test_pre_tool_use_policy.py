@@ -93,6 +93,9 @@ class PreToolUsePolicyTest(unittest.TestCase):
                         "*** Update File: docs/GLOSSARY.md\n"
                         "@@\n"
                         "+Project notes\n"
+                        f"*** Update File: {PROJECT_DIRECTORY}/docs/ISSUE-TRACKER.md\n"
+                        "@@\n"
+                        "+Project notes\n"
                         "*** End Patch\n"
                     )
                 },

@@ -105,7 +105,7 @@ export default {
         .then((rtkOutput) => JSON.parse(rtkOutput).command)
         .catch(() => undefined)
       if (typeof rewrittenCommand === "string" && rewrittenCommand !== "") {
-        event.input.command = rewrittenCommand
+        event.input[safetyHookMapping.inputField] = rewrittenCommand
       }
     })
   },

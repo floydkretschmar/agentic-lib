@@ -190,3 +190,10 @@ Move `.codex/hooks/pre_tool_use_policy.py` and its test to `hooks/` and point `r
 - Implementation review
   - [x] The README claims that the hook blocks all paths outside the project, but relative `..` paths in patches pass -> README names absolute paths and the patch gap
   - [x] The README asks for opencode 2.3 or later, while the spec targets 2.3.x -> README says 2.3.x
+- Implementation review after Phase 3
+  - [x] The plugin's `resolve` against the plugin directory has no failing test -> allowed case with the plugin directory `docs` and `edit ../README.md`
+  - [x] No test proves that the safety hook judges the command before rtk rewrites it -> the blocked hard-reset case uses an rtk command that answers `git status`
+  - [x] Story 21 has no test for an absolute in-project patch path -> the allowed patch case also updates an absolute in-project path
+  - [x] The README does not say that Claude Code `Write` and `Edit` outside the project are denied -> README note
+  - [x] The plugin writes `event.input.command` instead of the mapped input field -> use the mapping's field
+  - [x] The fixture commands used as rtk lack the `--` separator, so Node rejects `--agent` and the `{}` case only tested an rtk failure -> `--` added

@@ -3,6 +3,8 @@ import { join } from "node:path"
 import { test } from "node:test"
 import {
   commandPrintingEmptyObject,
+  commandRewritingToGitStatus,
+  documentationDirectory,
   failingCommand,
   hangingCommand,
   pluginOptionsWith,
@@ -16,7 +18,12 @@ import {
 
 test("blocks a tool call with the safety hook's reason", async (context) => {
   const blockedCalls = [
-    { tool: "shell", input: { command: "git reset --hard HEAD" }, optionOverrides: {}, reason: "hard git resets are blocked" },
+    {
+      tool: "shell",
+      input: { command: "git reset --hard HEAD" },
+      optionOverrides: { rtkRewriteCommand: commandRewritingToGitStatus },
+      reason: "hard git resets are blocked",
+    },
     { tool: "bash", input: { command: "rm -rf build" }, optionOverrides: {}, reason: "recursive forced deletion is blocked" },
     { tool: "write", input: { path: ".env", content: "" }, optionOverrides: {}, reason: "editing sensitive path is blocked: .env" },
     {
@@ -51,7 +58,7 @@ test("blocks a tool call with the safety hook's reason", async (context) => {
 
   for (const blockedCall of blockedCalls) {
     await context.test(`${blockedCall.tool} ${JSON.stringify(blockedCall.input)} ${JSON.stringify(blockedCall.optionOverrides)}`, async () => {
-      const executeBefore = await setUpPlugin(pluginOptionsWith(blockedCall.optionOverrides))
+      const executeBefore = await setUpPlugin(pluginOptionsWith(blockedCall.optionOverrides), projectDirectory)
 
       const toolCall = executeBefore(toolEvent(blockedCall.tool, blockedCall.input))
 
@@ -63,26 +70,47 @@ test("blocks a tool call with the safety hook's reason", async (context) => {
 test("lets an allowed tool call run with the rtk rewrite applied to shell commands", async (context) => {
   const glossaryPath = join(projectDirectory, "docs/GLOSSARY.md")
   const allowedCalls = [
-    { tool: "shell", input: { command: "git status" }, optionOverrides: {}, expectedInput: { command: "--agent|build|git status" } },
+    {
+      tool: "shell",
+      input: { command: "git status" },
+      optionOverrides: {},
+      pluginDirectory: projectDirectory,
+      expectedInput: { command: "--agent|build|git status" },
+    },
     {
       tool: "edit",
       input: { path: glossaryPath, oldString: "a", newString: "b" },
       optionOverrides: {},
+      pluginDirectory: projectDirectory,
       expectedInput: { path: glossaryPath, oldString: "a", newString: "b" },
     },
-    { tool: "read", input: { path: ".env" }, optionOverrides: {}, expectedInput: { path: ".env" } },
-    { tool: "shell", input: { command: "git status" }, optionOverrides: { rtkRewriteCommand: failingCommand }, expectedInput: { command: "git status" } },
+    {
+      tool: "edit",
+      input: { path: "../README.md", oldString: "a", newString: "b" },
+      optionOverrides: {},
+      pluginDirectory: documentationDirectory,
+      expectedInput: { path: "../README.md", oldString: "a", newString: "b" },
+    },
+    { tool: "read", input: { path: ".env" }, optionOverrides: {}, pluginDirectory: projectDirectory, expectedInput: { path: ".env" } },
+    {
+      tool: "shell",
+      input: { command: "git status" },
+      optionOverrides: { rtkRewriteCommand: failingCommand },
+      pluginDirectory: projectDirectory,
+      expectedInput: { command: "git status" },
+    },
     {
       tool: "shell",
       input: { command: "git status" },
       optionOverrides: { rtkRewriteCommand: commandPrintingEmptyObject },
+      pluginDirectory: projectDirectory,
       expectedInput: { command: "git status" },
     },
   ]
 
   for (const allowedCall of allowedCalls) {
     await context.test(`${allowedCall.tool} ${JSON.stringify(allowedCall.input)} ${JSON.stringify(allowedCall.optionOverrides)}`, async () => {
-      const executeBefore = await setUpPlugin(pluginOptionsWith(allowedCall.optionOverrides))
+      const executeBefore = await setUpPlugin(pluginOptionsWith(allowedCall.optionOverrides), allowedCall.pluginDirectory)
       const event = toolEvent(allowedCall.tool, allowedCall.input)
 
       await executeBefore(event)
@@ -100,7 +128,7 @@ test("refuses to set up with a missing or wrongly typed option", async (context)
 
   for (const invalidOptions of invalidPluginOptions) {
     await context.test(invalidOptions.name, async () => {
-      const setup = setUpPlugin(invalidOptions.pluginOptions)
+      const setup = setUpPlugin(invalidOptions.pluginOptions, projectDirectory)
 
       await assert.rejects(setup, { message: invalidOptions.reason })
     })
