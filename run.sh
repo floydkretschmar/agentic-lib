@@ -1,11 +1,13 @@
 #!/usr/bin/env sh
 set -eu
 
+project_directory="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+
 run_test() {
   # JavaScript example:
   #   run package-manager test
   #   run package-manager typecheck
-  python3 -m unittest discover --start-directory "$(git rev-parse --show-toplevel)/hooks" --pattern 'test_*.py'
+  python3 -m unittest discover --start-directory "$project_directory/hooks" --pattern 'test_*.py'
 }
 
 run_lint() {
@@ -27,7 +29,6 @@ run_build() {
 }
 
 safety_hook() {
-  project_directory="$(cd "$(dirname "$0")" && pwd)"
   python3 "$project_directory/hooks/pre_tool_use_policy.py" "$project_directory"
 }
 

@@ -16,9 +16,11 @@ PROJECT_LINK = WORKSPACE_DIRECTORY / "project-link"
 
 
 def setUpModule() -> None:
-    (PROJECT_DIRECTORY / "docs").mkdir(parents=True)
+    (PROJECT_DIRECTORY / "docs" / "nested").mkdir(parents=True)
     OUTSIDE_DIRECTORY.mkdir()
     (PROJECT_DIRECTORY / "outside-link").symlink_to(OUTSIDE_DIRECTORY)
+    (PROJECT_DIRECTORY / "nested-link").symlink_to(PROJECT_DIRECTORY / "docs" / "nested")
+    (PROJECT_DIRECTORY / ".env").symlink_to(PROJECT_DIRECTORY / "docs" / "settings.txt")
     PROJECT_LINK.symlink_to(PROJECT_DIRECTORY)
 
 
@@ -105,6 +107,8 @@ class PreToolUsePolicyTest(unittest.TestCase):
             pre_tool_use("Edit", {"file_path": f"{PROJECT_DIRECTORY}/.git/config"}),
             pre_tool_use("Write", {"file_path": "/etc/hosts"}),
             pre_tool_use("Write", {"file_path": f"{PROJECT_DIRECTORY}/outside-link/notes.md"}),
+            pre_tool_use("Write", {"file_path": "nested-link/../../notes.md"}),
+            pre_tool_use("Write", {"file_path": "outside-link/../notes.md"}),
             pre_tool_use("NotebookEdit", {"notebook_path": f"{OUTSIDE_DIRECTORY}/notes.ipynb"}),
             without_working_directory(pre_tool_use("Write", {"file_path": "docs/notes.md"})),
         ):

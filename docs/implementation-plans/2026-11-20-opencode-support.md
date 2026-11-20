@@ -241,3 +241,7 @@ Map `Edit`, `Write` and `NotebookEdit` to their path field in the hook. Resolve 
   - [x] The README does not say that Claude Code `Write` and `Edit` outside the project are denied -> README note
   - [x] The plugin writes `event.input.command` instead of the mapped input field -> use the mapping's field
   - [x] The fixture commands used as rtk lack the `--` separator, so Node rejects `--agent` and the `{}` case only tested an rtk failure -> `--` added
+- Implementation review after Phase 4
+  - [x] A `.env` that is a symlink to a file with an ordinary name can be overwritten, because the hook judges only the resolved target -> also check the path name as the tool wrote it; the test project gets a `.env` symlink, so the existing `Edit .env` case covers it
+  - [x] `deep/../../x` through an in-project symlink that points deeper is allowed, although opencode resolves `..` before symlinks and writes outside the project -> judge both the kernel resolution and the `..`-first resolution; new denied cases for both directions
+  - [x] `run.sh` finds the project with git in `run_test` and with its own folder in `safety_hook`, and `cd` breaks under `CDPATH` -> one project directory from the folder of `run.sh`, with `CDPATH` cleared
