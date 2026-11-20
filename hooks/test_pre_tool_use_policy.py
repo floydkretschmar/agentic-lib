@@ -10,7 +10,7 @@ from pathlib import Path
 HOOK = Path(__file__).with_name("pre_tool_use_policy.py")
 TEMPORARY_DIRECTORY = tempfile.TemporaryDirectory()
 WORKSPACE_DIRECTORY = Path(TEMPORARY_DIRECTORY.name)
-PROJECT_DIRECTORY = WORKSPACE_DIRECTORY / "project"
+PROJECT_DIRECTORY = WORKSPACE_DIRECTORY / ".ssh" / "project"
 OUTSIDE_DIRECTORY = WORKSPACE_DIRECTORY / "outside"
 PROJECT_LINK = WORKSPACE_DIRECTORY / "project-link"
 
@@ -21,6 +21,7 @@ def setUpModule() -> None:
     (PROJECT_DIRECTORY / "outside-link").symlink_to(OUTSIDE_DIRECTORY)
     (PROJECT_DIRECTORY / "nested-link").symlink_to(PROJECT_DIRECTORY / "docs" / "nested")
     (PROJECT_DIRECTORY / ".env").symlink_to(PROJECT_DIRECTORY / "docs" / "settings.txt")
+    (PROJECT_DIRECTORY / "docs" / "outside-notes.md").symlink_to(OUTSIDE_DIRECTORY / "notes.md")
     PROJECT_LINK.symlink_to(PROJECT_DIRECTORY)
 
 
@@ -109,6 +110,10 @@ class PreToolUsePolicyTest(unittest.TestCase):
             pre_tool_use("Write", {"file_path": f"{PROJECT_DIRECTORY}/outside-link/notes.md"}),
             pre_tool_use("Write", {"file_path": "nested-link/../../notes.md"}),
             pre_tool_use("Write", {"file_path": "outside-link/../notes.md"}),
+            pre_tool_use("Write", {"file_path": f"'/../..{PROJECT_DIRECTORY}/docs/notes.md"}),
+            pre_tool_use("Write", {"file_path": ".git/..'"}),
+            pre_tool_use("Write", {"file_path": "docs/outside-notes.md"}),
+            pre_tool_use("apply_patch", {"command": "*** Begin Patch\n*** Delete File: .env  \n*** End Patch\n"}),
             pre_tool_use("NotebookEdit", {"notebook_path": f"{OUTSIDE_DIRECTORY}/notes.ipynb"}),
             without_working_directory(pre_tool_use("Write", {"file_path": "docs/notes.md"})),
         ):

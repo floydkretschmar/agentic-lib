@@ -63,21 +63,28 @@ def string_field_from(tool_input: Any, field_name: str) -> str:
     return ""
 
 
-def has_sensitive_name(path: str) -> bool:
-    parts = PurePosixPath(path).parts
-    name = PurePosixPath(path).name
+def is_sensitive_path(path: str) -> bool:
+    clean = path.strip().strip("\"'")
+    if not clean:
+        return False
+
+    parts = PurePosixPath(clean).parts
+    name = PurePosixPath(clean).name
     return (
-        any(part in SENSITIVE_PATH_PARTS for part in parts)
+        clean.startswith("/")
+        or any(part in SENSITIVE_PATH_PARTS for part in parts)
         or name in SENSITIVE_FILE_NAMES
         or name.endswith((".pem", ".key", ".p12", ".pfx"))
     )
 
 
-def is_sensitive_path(path: str) -> bool:
-    clean = path.strip().strip("\"'")
-    if not clean:
-        return False
-    return clean.startswith("/") or has_sensitive_name(clean)
+def resolved_paths_for(path: str) -> list[str]:
+    resolved_paths = []
+    for unresolved_path in (path, os.path.normpath(path)):
+        parent_directory = os.path.realpath(os.path.dirname(unresolved_path))
+        resolved_paths.append(os.path.join(parent_directory, os.path.basename(unresolved_path)))
+        resolved_paths.append(os.path.realpath(unresolved_path))
+    return resolved_paths
 
 
 def project_path_for(real_path: str, project_directory: str) -> str:
@@ -133,14 +140,10 @@ def edit_denial_reason(paths: Iterable[str], working_directory: str, project_dir
     if not working_directory:
         return "editing without a working directory in the hook input is blocked"
     for path in paths:
-        written_path = path.strip().strip("\"'")
-        joined_path = os.path.join(working_directory, written_path)
-        for resolved_path in (os.path.realpath(joined_path), os.path.realpath(os.path.normpath(joined_path))):
+        for resolved_path in resolved_paths_for(os.path.join(working_directory, path)):
             project_path = project_path_for(resolved_path, project_directory)
             if is_sensitive_path(project_path):
                 return f"editing sensitive path is blocked: {project_path}"
-        if has_sensitive_name(os.path.normpath(written_path)):
-            return f"editing sensitive path is blocked: {os.path.normpath(written_path)}"
     return None
 
 
