@@ -22,6 +22,8 @@ def setUpModule() -> None:
     (PROJECT_DIRECTORY / "nested-link").symlink_to(PROJECT_DIRECTORY / "docs" / "nested")
     (PROJECT_DIRECTORY / ".env").symlink_to(PROJECT_DIRECTORY / "docs" / "settings.txt")
     (PROJECT_DIRECTORY / "docs" / "outside-notes.md").symlink_to(OUTSIDE_DIRECTORY / "notes.md")
+    (PROJECT_DIRECTORY / "repository-storage").mkdir()
+    (PROJECT_DIRECTORY / ".git").symlink_to(PROJECT_DIRECTORY / "repository-storage")
     PROJECT_LINK.symlink_to(PROJECT_DIRECTORY)
 
 
@@ -106,6 +108,7 @@ class PreToolUsePolicyTest(unittest.TestCase):
             pre_tool_use("apply_patch", {"command": "*** Begin Patch\n*** Add File: ../outside.md\n*** End Patch\n"}),
             pre_tool_use("Edit", {"file_path": ".env"}),
             pre_tool_use("Edit", {"file_path": f"{PROJECT_DIRECTORY}/.git/config"}),
+            pre_tool_use("Edit", {"file_path": f"{PROJECT_LINK}/.git/config"}),
             pre_tool_use("Write", {"file_path": "/etc/hosts"}),
             pre_tool_use("Write", {"file_path": f"{PROJECT_DIRECTORY}/outside-link/notes.md"}),
             pre_tool_use("Write", {"file_path": "nested-link/../../notes.md"}),
@@ -114,6 +117,9 @@ class PreToolUsePolicyTest(unittest.TestCase):
             pre_tool_use("Write", {"file_path": ".git/..'"}),
             pre_tool_use("Write", {"file_path": "docs/outside-notes.md"}),
             pre_tool_use("apply_patch", {"command": "*** Begin Patch\n*** Delete File: .env  \n*** End Patch\n"}),
+            pre_tool_use("apply_patch", {"command": "*** Begin Patch\n*** Update File: docs/outside-notes.md  \n*** End Patch\n"}),
+            pre_tool_use("apply_patch", {"command": "*** Begin Patch\n  *** Delete File: .git/config\n*** End Patch\n"}),
+            pre_tool_use("apply_patch", {"command": "*** Begin Patch\n*** Add File: docs\r/../.env\n*** End Patch\n"}),
             pre_tool_use("NotebookEdit", {"notebook_path": f"{OUTSIDE_DIRECTORY}/notes.ipynb"}),
             without_working_directory(pre_tool_use("Write", {"file_path": "docs/notes.md"})),
         ):

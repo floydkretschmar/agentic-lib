@@ -78,25 +78,37 @@ def is_sensitive_path(path: str) -> bool:
     )
 
 
-def resolved_paths_for(path: str) -> list[str]:
-    resolved_paths = []
-    for unresolved_path in (path, os.path.normpath(path)):
-        parent_directory = os.path.realpath(os.path.dirname(unresolved_path))
-        resolved_paths.append(os.path.join(parent_directory, os.path.basename(unresolved_path)))
-        resolved_paths.append(os.path.realpath(unresolved_path))
-    return resolved_paths
+def is_outside_project(project_relative_path: str) -> bool:
+    return project_relative_path == ".." or project_relative_path.startswith("../")
 
 
-def project_path_for(real_path: str, project_directory: str) -> str:
-    project_relative_path = os.path.relpath(real_path, os.path.realpath(project_directory))
-    if project_relative_path == ".." or project_relative_path.startswith("../"):
-        return real_path
+def project_path_for(resolved_path: str, project_directory: str) -> str:
+    project_relative_path = os.path.relpath(resolved_path, os.path.realpath(project_directory))
+    if is_outside_project(project_relative_path):
+        return resolved_path
     return project_relative_path
 
 
+def checked_paths_for(path: str, project_directory: str) -> list[str]:
+    lexical_path = os.path.normpath(path)
+    lexical_project_paths = [
+        os.path.relpath(lexical_path, project_form)
+        for project_form in (project_directory, os.path.realpath(project_directory))
+    ]
+    resolved_project_paths = [
+        project_path_for(os.path.realpath(unresolved_path), project_directory)
+        for unresolved_path in (path, lexical_path)
+    ]
+    return [
+        lexical_project_path
+        for lexical_project_path in lexical_project_paths
+        if not is_outside_project(lexical_project_path)
+    ] + resolved_project_paths
+
+
 def patch_paths(command: str) -> Iterable[str]:
-    for line in command.splitlines():
-        match = re.match(r"\*\*\* (Add File|Delete File|Update File|Move to): (.+)$", line)
+    for line in command.split("\n"):
+        match = re.match(r"\*\*\* (Add File|Delete File|Update File|Move to): (.+)$", line.strip())
         if match:
             yield match.group(2)
 
@@ -140,10 +152,9 @@ def edit_denial_reason(paths: Iterable[str], working_directory: str, project_dir
     if not working_directory:
         return "editing without a working directory in the hook input is blocked"
     for path in paths:
-        for resolved_path in resolved_paths_for(os.path.join(working_directory, path)):
-            project_path = project_path_for(resolved_path, project_directory)
-            if is_sensitive_path(project_path):
-                return f"editing sensitive path is blocked: {project_path}"
+        for checked_path in checked_paths_for(os.path.join(working_directory, path), project_directory):
+            if is_sensitive_path(checked_path):
+                return f"editing sensitive path is blocked: {checked_path}"
     return None
 
 
