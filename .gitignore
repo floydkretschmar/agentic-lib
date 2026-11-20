@@ -29,3 +29,5 @@ __pycache__/
 /.claude/routines
 /.claude/scheduled_tasks.json
 /.claude/workflows
+/.claude/settings.local.json
+/.claude/.cc-writes/
