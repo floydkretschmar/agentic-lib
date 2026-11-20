@@ -244,9 +244,9 @@ Replace the Phase 5 hook with `main`'s hook plus one edit-path check: the path j
 - The hook stays close to `main`; every check is proven by breaking its line once.
 
 ### Acceptance criteria
-- [ ] `./run.sh lint`, `./run.sh test`, `./run.sh build` and the plugin tests pass.
-- [ ] `.claude/settings.json`, `.codex/config.toml` and `.opencode/opencode.json` parse.
-- [ ] In a running Claude Code session with the sandbox on, a shell write outside the project fails, an `Edit` of `.env` is denied by a deny rule, and an `Edit` of a project file succeeds.
+- [x] `./run.sh lint`, `./run.sh test`, `./run.sh build` and the plugin tests pass.
+- [x] `.claude/settings.json`, `.codex/config.toml` and `.opencode/opencode.json` parse.
+- [x] In a running Claude Code session with the sandbox on, a shell write outside the project fails, an `Edit` of `.env` is denied by a deny rule, and an `Edit` of a project file succeeds.
 
 # Manual verification
 1. Install opencode 2.3.x and run `./run.sh setup-environment`. It reports that rtk is available.
@@ -287,10 +287,10 @@ Replace the Phase 5 hook with `main`'s hook plus one edit-path check: the path j
 - [x] Step 5.2
 - [x] Step 5.3
 - [x] Step 5.4
-- [ ] Step 6.1
-- [ ] Step 6.2
-- [ ] Step 6.3
-- [ ] Step 6.4
+- [x] Step 6.1
+- [x] Step 6.2
+- [x] Step 6.3
+- [x] Step 6.4
 
 # Review findings:
 - Step 1
