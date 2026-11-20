@@ -189,7 +189,7 @@ Map `Edit`, `Write` and `NotebookEdit` to their path field in the hook. Resolve 
 
 ---
 
-## Phase 5: Robust edit and shell rules
+## Phase 5: Robust edit and shell rules (superseded by Phase 6)
 
 **User stories**: 26, 27
 
@@ -221,6 +221,33 @@ Replace the candidate list with one function per rule. Write the new hook next t
 - [x] Each rule fails at least one case when its production line is broken.
 - [x] In the running Claude Code session, `sudo -n true` is denied and an `Edit` of a project file succeeds.
 
+---
+
+## Phase 6: Native sandboxes and a small hook
+
+**User stories**: 25, 26, 27
+
+### What to build
+Phase 5 tried to make the text-matching hook a security boundary and grew it into a shell parser of about 600 lines. The user rejected that approach. Each tool's own sandbox and permission rules become the boundary, and the hook shrinks back to a small best-effort tripwire.
+
+#### Step 6.1: Write failing test
+- `test_pre_tool_use_policy.py`: a compact suite for the tripwire. The command patterns of `main` with `sudo` after a line break; edits through an outside symlink, sensitive names in any case, `MultiEdit`, `NotebookEdit`, patches with `Move to` or without header paths, edits without a path or without `cwd`, invalid UTF-8; edits through a symlink to the project are allowed.
+
+#### Step 6.2: Implement minimal code
+Replace the Phase 5 hook with `main`'s hook plus one edit-path check: the path joined to the absolute `cwd` and resolved through symlinks must lie inside the project, and neither its project path nor its written file name may be sensitive. Add the Codex permission profile, the opencode permission rules, and the Claude Code sandbox and deny rules.
+
+#### Step 6.3: Verify test passes
+**Run:** `./run.sh test` and `node --test .opencode/plugins/pre-tool-use/pre-tool-use.test.ts`
+**Expect:** PASS (green)
+
+#### Step 6.4: Aggressive refactor
+- The hook stays close to `main`; every check is proven by breaking its line once.
+
+### Acceptance criteria
+- [ ] `./run.sh lint`, `./run.sh test`, `./run.sh build` and the plugin tests pass.
+- [ ] `.claude/settings.json`, `.codex/config.toml` and `.opencode/opencode.json` parse.
+- [ ] In a running Claude Code session with the sandbox on, a shell write outside the project fails, an `Edit` of `.env` is denied by a deny rule, and an `Edit` of a project file succeeds.
+
 # Manual verification
 1. Install opencode 2.3.x and run `./run.sh setup-environment`. It reports that rtk is available.
 2. Start opencode in the repository and run `opencode plugin list`. It lists `pre-tool-use` once, loaded without errors. Stop here and report if `pre-tool-use` is missing or listed twice.
@@ -235,6 +262,9 @@ Replace the candidate list with one function per rule. Write the new hook next t
 11. Ask Claude Code to add a line to `docs/GLOSSARY.md`. The edit succeeds. Revert it afterwards.
 12. Ask Claude Code to write a file to `/tmp`. The call fails with "editing sensitive path is blocked".
 13. Ask Claude Code to run `git status`. It runs as `rtk git status`.
+14. Install `bubblewrap` and `socat`, start Claude Code, and ask it to run `touch ~/sandbox-probe`. The command fails with a read-only file system error.
+15. Start Codex in the repository and ask it to create `.env`. The sandbox refuses the write.
+16. In opencode, ask for a file outside the project. The `external_directory` rule denies it.
 
 # Task tracking
 - [x] Step 1.1
@@ -257,6 +287,10 @@ Replace the candidate list with one function per rule. Write the new hook next t
 - [x] Step 5.2
 - [x] Step 5.3
 - [x] Step 5.4
+- [ ] Step 6.1
+- [ ] Step 6.2
+- [ ] Step 6.3
+- [ ] Step 6.4
 
 # Review findings:
 - Step 1

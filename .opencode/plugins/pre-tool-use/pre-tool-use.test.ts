@@ -32,12 +32,12 @@ test("blocks a tool call with the safety hook's reason", async (context) => {
       optionOverrides: {},
       reason: "editing sensitive path is blocked: .git/config",
     },
-    { tool: "write", input: { path: "/etc/hosts", content: "" }, optionOverrides: {}, reason: "editing sensitive path is blocked: /etc/hosts" },
+    { tool: "write", input: { path: "/etc/hosts", content: "" }, optionOverrides: {}, reason: "editing outside the project is blocked: /etc/hosts" },
     {
       tool: "write",
       input: { path: siblingProjectNotesRelativePath, content: "" },
       optionOverrides: {},
-      reason: `editing sensitive path is blocked: ${siblingProjectNotesAbsolutePath}`,
+      reason: `editing outside the project is blocked: ${siblingProjectNotesAbsolutePath}`,
     },
     {
       tool: "patch",

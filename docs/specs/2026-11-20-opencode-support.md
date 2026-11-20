@@ -30,16 +30,16 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
 20. As a Claude Code user, I want a tool call blocked when the safety hook fails, times out or returns unreadable output, so that a broken guard never lets a call through.
 21. As a Codex user, I want patches that leave the project through a relative `..` path blocked, and patches with an absolute path inside the project allowed, so that the guard judges where a patch writes and not how its path is spelled.
 22. As a Claude Code user, I want `NotebookEdit` calls checked like `Edit` and `Write`, so that a notebook edit cannot reach a sensitive path.
-23. As a user of any of the three tools, I want the guard to judge where a path leads after symlinks, so that a symlink cannot take an edit out of the project or into `.git`, and a project opened through a symlinked path can still be edited.
-24. As a Claude Code user, I want the guard to keep working after the session changes into a folder outside the project, so that a `cd` neither blocks every tool call nor runs another repository's `run.sh`.
-25. As a Codex or opencode user, I want relative paths judged from the directory that the tool works in, so that a session started in a subfolder can edit the files of its project.
-26. As a user of any of the three tools, I want the guard to judge an edit by the files it touches, whatever the spelling of the path, so that no symlink, `..` or alias of the project lets an edit reach a sensitive file or leave the project.
-27. As a user of any of the three tools, I want every simple command in a shell command judged, so that a dangerous command after `&&`, `;`, a pipe or a line break is blocked like a dangerous command at the start.
+23. As a Claude Code user, I want the guard to keep working after the session changes into a folder outside the project, so that a `cd` neither blocks every tool call nor runs another repository's `run.sh`.
+24. As a Codex or opencode user, I want relative paths judged from the directory that the tool works in, so that a session started in a subfolder can edit the files of its project.
+25. As a Claude Code or Codex user, I want the tool's own sandbox to confine shell commands to the project and keep the repository's git internals read-only where the tool protects them, so that no spelling of a command can damage files outside the project.
+26. As a user of any of the three tools, I want the tool's own permission rules to deny edits outside the project and to `.git`, `.ssh`, `.env` files and key files, so that this protection does not depend on a text check.
+27. As a maintainer, I want the shared safety hook to stay a small best-effort tripwire, so that it is easy to read and nobody mistakes it for a security boundary.
 
 ## Implementation Decisions
 
 - **Target version.** opencode V2 (2.3.x) with the V2 configuration keys (`plugins`, `agents` frontmatter with `permissions`), the V2 plugin shape (default export with `id` and `setup`) and the V2 tool names (`shell`, `edit`, `write`, `patch`).
-- **Configuration file.** One opencode configuration file inside the `.opencode` folder, next to the plugins and agents, in the same way that Codex keeps its configuration inside `.codex`. It lists one plugin, the project pre-tool-use plugin with its options. It has no MCP, permissions, instructions or skills entries.
+- **Configuration file.** One opencode configuration file inside the `.opencode` folder, next to the plugins and agents, in the same way that Codex keeps its configuration inside `.codex`. It lists one plugin, the project pre-tool-use plugin with its options, and the permission rules described under Enforcement layers. It has no MCP, instructions or skills entries.
 - **Pre-tool-use plugin.** One local plugin, stored as a folder so that its tests and fixture are not loaded as plugins. Its public interface is its default export, `{ id, setup(context) }`. `setup` reads four required options (safety hook command, safety hook timeout, rtk rewrite command, rtk rewrite timeout) and fails if one is missing or has the wrong type. It then registers one `execute.before` tool hook. The plugin runs both commands in the project directory from the plugin context and has no dependencies beyond Node built-ins.
 - **Hook sequence for each tool call.**
 
@@ -63,20 +63,11 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
   ```
 
 - **Tool mapping to the hook payload.** Every payload has the event name `PreToolUse`, a tool name and a tool input. `shell` and `bash` map to `Bash` with the command. `patch` maps to `apply_patch` with the patch text as the command. `edit` maps to `Edit` and `write` maps to `Write`, each with the path as `file_path` as opencode sent it. Every payload carries the location directory from the plugin context as `cwd`. All other tools, including MCP tools, pass through unchecked.
-- **Path contract.** The safety hook owns the path semantics for `Edit`, `Write`, `NotebookEdit` and patch paths. `run.sh safety-hook` passes the folder that holds `run.sh` as the project directory argument, and the hook joins each raw path to the absolute `cwd` of the payload. The hook judges an edit by the locations it touches, not by its spelling, under five rules:
-  1. **One meaning.** Tools resolve `..` differently: the kernel follows symlinks first, Node and Claude Code collapse `..` first. When both orders lead to different locations, the edit is denied. A path that starts with `~` is denied too, because some tools expand it to the home folder and others do not.
-  2. **Touched locations.** An edit touches its target, the file after all symlinks, and its entry, the folder after symlinks plus its own name, which a patch delete or move acts on. Both must lie inside the project and outside the repository storage, which is the real folder of the project's `.git`, or the folder that a `.git` file names in its `gitdir:` line. The storage comparison ignores case.
-  3. **Names.** No touched location, and no part of the path as written from the first part that resolves into the project, has a sensitive name. Names compare without regard to case.
-  4. **Malformed input.** A payload without an absolute `cwd`, an edit without a path, a patch without a header path, and a path with control characters (Unicode categories Cc and Cs) are denied. Input that is not valid UTF-8 or JSON, or JSON nested too deeply, is denied as malformed. The hook never fails with an error on input.
-  5. **Patch headers.** Header paths are read the way Codex reads them: the patch is split on line feeds only and each line is trimmed of the whitespace that Rust's `trim` removes.
-
-  MCP tool arguments keep the existing rule. The opencode plugin sends paths unchanged.
-- **Shell commands.** The hook reads a command the way bash does, and judges the words it reads, not the raw text:
-  - **Reading.** Single, double, `$'…'` and `$"…"` quotes, backslash escapes, line continuations outside single quotes, and `#` comments at the start of a word are honored. `;`, `&`, `|`, `(`, `)` and line breaks separate simple commands only outside quotes and outside redirections such as `&>`, `2>&1` and `>|`. The contents of `$(…)` and backticks, found with a nested reader that knows quotes, comments and heredocs, are judged as commands of their own. Heredoc delimiters are unquoted like bash does. A heredoc body is data, except that a body without its end line and the substitutions inside an unquoted body are judged as commands. `env -S` arguments are judged as commands. A word or a heredoc body that holds a `*** Begin Patch` patch with header paths is judged with the patch rules.
-  - **Shells.** When a command runs a shell interpreter or `eval` anywhere, every quoted word, here-string and heredoc body in it is judged as commands too, because the shell can receive that text as code through `-c`, a pipe or standard input.
-  - **Words.** Every word of a simple command that names a program by file name, in any case and after a leading zsh `=`, is judged with the words after it, without redirections. Words after the read-only programs `echo`, `printf`, `grep`, `egrep`, `fgrep`, `rg`, `ag`, `cat`, `head`, `tail`, `wc`, `ls`, `which`, `type` and `man` are data, unless the command runs a shell interpreter or `eval`. `sudo` is denied; `rm`, `unlink` and `rmdir` are parsed like GNU options, including abbreviated long options and `--`, and a recursive and forced `rm` or the deletion of a sensitive, absolute, `~` or parent path is denied; `git` is judged after its global options, and `reset --hard`, `clean` with `-f`, `-d`, `-x` or `--force`, and `checkout` or `restore` with `--` are denied; `dd` with `of=/dev/…`, `mkfs…`, `shutdown`, `reboot`, `poweroff` and `halt` are denied. A command that runs `curl` or `wget` and a script interpreter anywhere is denied.
-  - **Limits.** A command with unbalanced quotes or substitutions, or with more than 20 levels of nesting, is denied. Commands built from variables, globs or brace expansion, such as `$CMD`, `${V:-sudo}`, `/usr/bin/sud?` or `{sudo,ls}`, stay out of reach.
-- **Safety hook.** The hook stays the single source of the rules and stays reachable only through `run.sh safety-hook`. It moves with its tests from `.codex/hooks` to a root `hooks` folder next to `skills`, so that no tool folder depends on another. It judges `Edit`, `Write`, `NotebookEdit` and patch paths with the path contract above, and `Bash` commands with the shell rules above. These changes are approved by the user as security changes.
+- **Enforcement layers.** Each tool's own sandbox and permission rules are the boundary, and the shared safety hook is a best-effort tripwire on top. A text check cannot be a boundary, because a shell can always spell a command another way.
+  - **Claude Code.** `.claude/settings.json` turns on the Bash sandbox with `failIfUnavailable` and without unsandboxed retries, so shell commands write only in the project and the temp folders, and `.git/hooks` and `.git/config` stay read-only. `permissions.blockWritesOutsideWorkingDirectories` and `Edit` deny rules for `.git`, `.ssh`, `.env`, `.env.local`, `.env.production`, `id_rsa`, `id_ed25519`, `*.pem`, `*.key`, `*.p12` and `*.pfx` cover every file tool, and they also match the file that a symlink resolves to. On Linux the sandbox needs bubblewrap and socat.
+  - **Codex.** `.codex/config.toml` selects a permission profile that extends the `:workspace` sandbox. It confines writes to the workspace, keeps `.git`, `.codex` and `.agents` read-only, and denies the same sensitive files. Codex refuses to run a command when the sandbox cannot be applied. A user config that sets the older `sandbox_mode` replaces the profile.
+  - **opencode.** opencode has no OS sandbox, so shell commands run with the user's rights. `.opencode/opencode.json` denies `external_directory` and denies `edit`, which covers `write` and `patch`, for the same sensitive paths. opencode matches paths by their text, so the hook's symlink resolution adds to it.
+- **Safety hook.** The hook stays the single source of the shared rules and stays reachable only through `run.sh safety-hook`, in a root `hooks` folder next to `skills`. It keeps `main`'s command patterns, with `sudo` also caught after a line break. It checks `Edit`, `MultiEdit`, `Write`, `NotebookEdit` and patch paths: each path, joined to the absolute `cwd` of the payload and resolved through symlinks, must lie inside the project, and neither its project path nor its written file name may be sensitive. Patch headers are split on line feeds and trimmed, as Codex reads them. A payload without an absolute `cwd` or without a path, and input that is not valid JSON, are denied. MCP tool arguments keep the existing rule. These changes are approved by the user as security changes.
 - **rtk contract.** The plugin calls the rtk rewrite command with `--agent`, the agent name and the original command as one argument. rtk answers with JSON that holds a `command`, or with an empty object. Verified with rtk 1.2.1.
 - **Claude Code.** `.claude/settings.json` runs the safety hook for every tool (matcher `*`) with `"$CLAUDE_PROJECT_DIR/run.sh" safety-hook`, the same timeout as Codex and `onFailure: "block"`, next to the existing `rtk hook claude` hook. Claude Code runs matching hooks in parallel, and a deny takes precedence over the rtk rewrite, so a rewrite cannot hide a dangerous command from the guard.
 - **Subagents.** Five V2 agent files with mode `subagent`, a permission rule that denies the `edit` action for every resource, and the same prompt body as the Claude Code agent. Models: architect `anthropic/claude-fable-5-2#high`; qa and review `anthropic/claude-opus-5-5#high`; codebase researcher and web researcher `anthropic/claude-opus-5-5#medium`.
@@ -91,7 +82,8 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
   | Node | 24.x (24.16.0 verified) | Runs the plugin tests with built-in type stripping |
   | rtk | 1.2.1 | `rtk hook claude`, `rtk hook codex`, `rtk hook opencode` |
   | Python | 3.x, as today | Safety hook |
-  | Claude Code | 2.1.295 or later | `onFailure` for the safety hook |
+  | Claude Code | 2.1.314 or later | `onFailure` for the safety hook, the sandbox and `blockWritesOutsideWorkingDirectories` |
+  | bubblewrap and socat | from the Linux distribution | Claude Code sandbox on Linux; Codex uses bubblewrap too |
 
 ## Testing Decisions
 
@@ -103,14 +95,15 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
   2. The plugin allows: `shell` with `git status` as agent `build`, rewritten to the rtk stub's answer; `edit` of the absolute path of a project file, unchanged; `read` of `.env`, unchanged; `shell` with `git status` when the rtk stub fails or answers `{}`, unchanged.
   3. `setup` fails when an option is missing or has the wrong type.
   4. The hook denies `Edit` of `.env`, `Edit` of the absolute path of the project's `.git/config`, `Write` to `/etc/hosts`, a patch that moves a file to `.git/hooks/pre-commit` and a patch that adds `../outside.md`, and allows `Write` to the absolute path of the project's `docs/GLOSSARY.md`.
-  5. The hook denies `NotebookEdit` of a notebook outside the project, a `Write` through a symlink inside the project that points outside, and a payload without `cwd`. It allows a `Write` through a symlink to the project folder, and a patch that updates `../README.md` from the `docs` folder as `cwd`. The hook tests run against a real temporary project folder, because symlinks need real files.
-  6. Every spelling of an edit target gets the same decision as the plain spelling: relative, `./`, `docs/..`, from the `docs` folder, absolute, through each project symlink, through a link to `docs`, and from a `cwd` outside the project, for writes and for patch deletes.
-  7. Shell commands are judged the way the shell reads them: `sudo` and `rm -rf` after separators, keywords, wrappers with options, redirections, `find -exec`, `xargs`, line continuations, command substitutions, `bash -c`, `eval` and a heredoc passed to a shell are denied, and so are abbreviated long options and an `apply_patch` heredoc that adds `.env`. Commit messages, quoted text, heredoc bodies and comments that only mention these words are allowed.
+  5. The hook denies an edit through a symlink inside the project that points outside, `.env` and `.ENV.LOCAL` names, `MultiEdit` and `NotebookEdit` of sensitive or outside paths, a patch without a header path, an edit without a path or without `cwd`, and invalid UTF-8. It allows edits through a symlink to the project. The hook tests run against a real temporary project folder, because symlinks need real files.
+  6. The tool configurations are checked by parsing them, and their enforcement is verified in a real session.
 
 ## Out of Scope
 
 - Safety checks for opencode MCP tool calls.
 - Protecting the guard's own files.
+- An OS sandbox for opencode, which opencode does not offer.
+- Shell spellings that the hook's patterns do not match. The sandboxes are the boundary for them.
 - opencode slash command files for the skills.
 - rtk binary discovery outside `PATH`, `RTK_DISABLED`, and Windows support.
 - A generator for the per-tool copies of the agent prompts.
@@ -128,5 +121,7 @@ opencode is not installed on the development machine. These points come from ope
 - whether opencode writes cache files into `.opencode` that `.gitignore` must exclude
 
 The hook also ignores the shell `workdir`. This gap applies to all three tools.
+
+The Claude Code sandbox lets shell commands write to `.git` apart from its hooks and config, because commits need it. A hard git reset inside the sandbox can still discard work, and only the hook's pattern catches it.
 
 In Claude Code, the `Write` and `Edit` tools can no longer write outside the project, for example to the session scratchpad or to `~/.claude/plans`. Shell commands still can.

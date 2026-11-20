@@ -1,3 +1,20 @@
+default_permissions = "project"
+
+[permissions.project]
+extends = ":workspace"
+
+[permissions.project.filesystem.":workspace_roots"]
+"**/.ssh/**" = "deny"
+"**/.env" = "deny"
+"**/.env.local" = "deny"
+"**/.env.production" = "deny"
+"**/*.pem" = "deny"
+"**/*.key" = "deny"
+"**/*.p12" = "deny"
+"**/*.pfx" = "deny"
+"**/id_rsa" = "deny"
+"**/id_ed25519" = "deny"
+
 [features]
 multi_agent = true
 hooks = true
