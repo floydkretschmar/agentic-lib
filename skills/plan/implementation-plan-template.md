@@ -1,7 +1,8 @@
-# Scheme template
+# Implementation plan template
 
-<scheme-template>
-# Scheme: <Feature Name>
+<implementation-plan-template>
+
+# Implementation plan: <Feature Name>
 
 > Source spec: <brief identifier or link>
 
@@ -127,4 +128,4 @@ All manual steps that make sure that the implemented feature behaves correctly i
 - Step 2
 - ...
 
-</scheme-template>
+</implementation-plan-template>

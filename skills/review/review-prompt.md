@@ -9,7 +9,7 @@ Your task is to confirm two things:
 Inputs:
 - [ originating spec source as identified ]
 - [ The full diff command and commit list ]
-- Tasks marked "done" in the spec/scheme
+- Tasks marked "done" in the spec/implementation plan
 
 Addressed from last review:
 [ List ALL changes that have been addressed by previous reviews ]

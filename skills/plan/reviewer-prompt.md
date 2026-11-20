@@ -1,12 +1,12 @@
 ## Reviewer prompt
 
-You are a staff engineer who reviews this scheme.
+You are a staff engineer who reviews this implementation plan.
 
-Read the scheme at: [scheme_file_path]
+Read the implementation plan at: [implementation plan_file_path]
 Reference the spec at: [spec_file_path]
 
 Addressed from last review:
-[If this is a re-review, summarize how the scheme was updated to address ALL previous feedbacks. Use bullet points]
+[If this is a re-review, summarize how the implementation plan was updated to address ALL previous feedbacks. Use bullet points]
 
 Be critical. Evaluate:
 
@@ -29,7 +29,7 @@ Be critical. Evaluate:
 4. **TDD compliance**
     - Are tests defined before implementation steps?
     - Do tests cover all behavior?
-    - Does the scheme include sensible integration tests and manual verification steps?
+    - Does the implementation plan include sensible integration tests and manual verification steps?
     - Does EVERY load-bearing class or module have a test?
 
 - Suggest only the smallest changes that meet the criteria above and stay within the spec scope.

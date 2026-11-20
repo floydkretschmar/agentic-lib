@@ -23,7 +23,7 @@ When you make or propose any change, make sure to follow the ADRs in `docs/adr/*
 - **Never expose secrets from logs, environment dumps, CI output, screenshots, or terminal transcripts.**
 - Never commit secrets or credentials.
 - Never force push to main/master.
-- Never make changes outside the scheme without discussion, except for a boy scout change as defined above.
+- Never make changes outside the spec without discussion, except for a boy scout change as defined above.
 - Never mark a task done until FULL verification evidence is green:
   - `./run.sh lint`
   - `./run.sh test`

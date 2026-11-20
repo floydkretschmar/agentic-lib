@@ -63,7 +63,7 @@ A ticket is a child issue of the map, and its issue id identifies it. A ticket a
 <The decision or investigation that this ticket resolves.>
 ```
 
-Each ticket has one `wayfinder:<type>` label. The type is `research`, `prototype`, `grilling`, or `task` (see [Ticket types](#ticket-types)).
+Each ticket has one `wayfinder:<type>` label. The type is `research`, `prototype`, `interview`, or `task` (see [Ticket types](#ticket-types)).
 
 A session claims a ticket before it starts work, so that other sessions skip it. To claim a ticket, assign it to the developer who drives the map. An open ticket without an assignee is unclaimed.
 
@@ -75,11 +75,11 @@ A context pointer is a link to a ticket or asset with a one-line summary.
 
 ## Ticket types
 
-Each ticket is HITL (human in the loop) or AFK (away from keyboard). The agent works on a HITL ticket together with a human, who gives their own answers. The agent works on an AFK ticket alone. A HITL ticket resolves only through that live conversation, so a grilling agent must never answer its own questions.
+Each ticket is HITL (human in the loop) or AFK (away from keyboard). The agent works on a HITL ticket together with a human, who gives their own answers. The agent works on an AFK ticket alone. A HITL ticket resolves only through that live conversation, so a interview agent must never answer its own questions.
 
 - `research` (AFK). Use it when a decision needs a fact from outside the working directory, for example documentation, a third-party API, or a local knowledge base. A `/research` subagent resolves it.
 - `prototype` (HITL). Use it when the main question is how something must look or behave. Build a cheap, rough artifact that gives the discussion something concrete. Examples are an outline, a first draft, a stub, or UI or logic code from the `/prototype` skill. Link the prototype from the ticket.
-- `grilling` (HITL). A conversation through the `/grilling` skill, one question at a time. This is the default type.
+- `interview` (HITL). A conversation through the `/interview` skill, one question at a time. This is the default type.
 - `task` (HITL or AFK). Work that must happen before someone can make a decision, with nothing in it to decide, prototype, or research. Examples are a sign-up for a service to judge its API, access setup, or a data move to see the shape of the data. It is the only type that does work instead of making a decision. It is on the map because it unblocks a decision, not because it reaches the destination. If the agent can do the work alone, it does it (AFK). If not, it gives the human an exact checklist (HITL). The ticket resolves when the work is done. The answer records the work and the facts that later tickets need, for example the location of credentials, new URLs, or row counts.
 
 ## Not yet specified
@@ -108,7 +108,7 @@ In both modes, resolve at most one ticket per session. Research tickets are the 
 
 The user starts the skill with a loose idea.
 
-1. Define the destination first, because it sets the scope. Run a `/grilling` session to find the spec, decision, or change that the map leads to.
+1. Define the destination first, because it sets the scope. Run a `/interview` session to find the spec, decision, or change that the map leads to.
 2. Grill again, breadth-first this time, to find the open decisions and the first steps that are possible now. If nothing goes to Not yet specified, the whole job fits in one session and needs no map. In that case, stop and ask the user how to continue.
 3. Create the map with the label `wayfinder:map`. Fill in Destination and Notes. Leave Decisions so far empty. Write the unclear parts in Not yet specified.
 4. Create the tickets that you can specify now, as child issues of the map. Then add the blocking relations in a second pass, because an issue needs an id before other issues can refer to it. Everything else stays in Not yet specified.
@@ -121,7 +121,7 @@ The user starts the skill with a map (URL or number) and, optionally, a ticket.
 
 1. Load the map. Do not load every ticket body.
 2. Take the ticket that the user named. If the user named none, take the first available ticket. Before you start work, assign it to the developer who is working the map to claim it.
-3. Resolve the ticket with the skills that the Notes section names. If you are not sure which skill to use, use `/grilling`. If you need the details of a related or closed ticket, load its full body.
+3. Resolve the ticket with the skills that the Notes section names. If you are not sure which skill to use, use `/interview`. If you need the details of a related or closed ticket, load its full body.
 4. Post the answer as a resolution comment and close the ticket. Add a context pointer to it in Decisions so far on the map.
 5. Create the new tickets that you found, then add their blocking relations. Turn the items in Not yet specified that the answer made precise into tickets, and remove them from that section.
 6. If the answer shows that a ticket is past the destination, move it to Out of scope as that section describes. This includes the current ticket. Do not resolve it. If the decision makes other tickets wrong, update or delete them.

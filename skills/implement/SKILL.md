@@ -1,10 +1,10 @@
 ---
 name: implement
-description: Use it after a scheme exists and the user is ready to start implementation.
+description: Use it after a implementation plan exists and the user is ready to start implementation.
 ---
 
 # Execute skill
-Execute an implementation scheme until all phases are complete. Follow these steps:
+Execute an implementation plan until all phases are complete. Follow these steps:
 
 1. Gather context
 2. Implement one phase at a time until ALL phases in the spec are done
@@ -26,7 +26,7 @@ You cannot mark a phase complete until:
 
 Start from the conversation context. Then:
 
-1. Read the spec file and the scheme file
+1. Read the spec file and the implementation plan file
 2. Read `docs/adr/*.md` for project conventions
 3. Run all unit tests and the build as a baseline.
 
