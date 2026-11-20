@@ -187,6 +187,40 @@ Map `Edit`, `Write` and `NotebookEdit` to their path field in the hook. Resolve 
 - [x] In the running Claude Code session, `sudo -n true` is denied and an `Edit` of a project file succeeds.
 - [x] The Claude Code hook command works from a folder outside the repository.
 
+---
+
+## Phase 5: Robust edit and shell rules
+
+**User stories**: 26, 27
+
+### What to build
+The hook judges an edit by the locations it touches under the five rules of the spec's path contract, instead of adding one candidate spelling per finding: one meaning or deny, target and entry inside the project and outside the `.git` storage, sensitive names in any case, malformed input denied without errors, and Codex header parsing. Shell commands are judged per simple command.
+
+#### Step 5.1: Write failing test
+- `test_pre_tool_use_policy.py`
+    - New parameterized test: every spelling of an edit target gets the decision of its plain spelling. Targets: `docs/GLOSSARY.md`, a new file in a new folder, `docs/settings.txt` (allowed); `.env`, `.ENV`, `.git/config`, the `.git` storage folder's `config`, `docs/.ssh/authorized_keys`, `docs/.env.local`, `docs/outside-notes.md` (denied). Spellings: relative, `./`, `docs/..`, from `cwd` `docs`, absolute, through each project symlink, through the link to `docs`, from a `cwd` outside the project. Shapes: `Write` and a patch delete.
+    - Denied edit targets: replace the spelling cases that the new test covers; add a path where `..` follows a symlink and stays inside the project, a tab, a NUL byte and a lone surrogate in a path.
+    - Shell commands: denied `sudo` after a line break, `rm -rf` after `&&`, `rm --recursive --force`, `rm -r -f`, `rm` behind `env FOO=1`, `/bin/rm -rf`; allowed a pipe of harmless commands.
+
+**Run:** `./run.sh test`
+**Expect:** FAIL (red)
+
+#### Step 5.2: Implement minimal code
+Replace the candidate list with one function per rule. Write the new hook next to the live one and switch it in one command that verifies it and restores the old hook on failure, because the live Claude Code hook fails closed.
+
+#### Step 5.3: Verify test passes
+**Run:** `./run.sh test` and `node --test .opencode/plugins/pre-tool-use/pre-tool-use.test.ts`
+**Expect:** PASS (green)
+
+#### Step 5.4: Aggressive refactor
+- Hook: no candidate enumeration left; one function per rule.
+- Tests: no case that the spelling test already covers.
+
+### Acceptance criteria
+- [x] `./run.sh lint`, `./run.sh test`, `./run.sh build` and the plugin tests pass.
+- [x] Each rule fails at least one case when its production line is broken.
+- [x] In the running Claude Code session, `sudo -n true` is denied and an `Edit` of a project file succeeds.
+
 # Manual verification
 1. Install opencode 2.3.x and run `./run.sh setup-environment`. It reports that rtk is available.
 2. Start opencode in the repository and run `opencode plugin list`. It lists `pre-tool-use` once, loaded without errors. Stop here and report if `pre-tool-use` is missing or listed twice.
@@ -219,6 +253,10 @@ Map `Edit`, `Write` and `NotebookEdit` to their path field in the hook. Resolve 
 - [x] Step 4.2
 - [x] Step 4.3
 - [x] Step 4.4
+- [x] Step 5.1
+- [x] Step 5.2
+- [x] Step 5.3
+- [x] Step 5.4
 
 # Review findings:
 - Step 1

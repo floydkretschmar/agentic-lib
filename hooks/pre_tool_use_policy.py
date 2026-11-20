@@ -23,15 +23,16 @@ DANGEROUS_COMMAND_PATTERNS = (
     ),
     (re.compile(r"\bdd\b[^;\n]*\bof=/dev/"), "raw device writes are blocked"),
     (re.compile(r"\b(mkfs|shutdown|reboot|poweroff|halt)\b"), "system-level destructive command is blocked"),
-    (
-        re.compile(r"(^|[;&|]\s*)sudo\b"),
-        "sudo commands require explicit human approval outside this hook",
-    ),
 )
+COMMAND_SEPARATOR_PATTERN = re.compile(r"&&|\|\||\$\(|[;&|\n()`]")
+VARIABLE_ASSIGNMENT_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=.*")
+COMMAND_WRAPPERS = {"command", "env", "exec", "nice", "nohup", "time", "xargs"}
+DELETING_COMMANDS = {"rm", "unlink", "rmdir"}
 
 EDIT_PATH_FIELD_BY_TOOL = {"Edit": "file_path", "Write": "file_path", "NotebookEdit": "notebook_path"}
 SENSITIVE_PATH_PARTS = {".git", ".ssh"}
 SENSITIVE_FILE_NAMES = {".env", ".env.local", ".env.production", "id_rsa", "id_ed25519"}
+SENSITIVE_FILE_EXTENSIONS = (".pem", ".key", ".p12", ".pfx")
 
 
 def deny(reason: str) -> None:
@@ -68,13 +69,13 @@ def is_sensitive_path(path: str) -> bool:
     if not clean:
         return False
 
-    parts = PurePosixPath(clean).parts
-    name = PurePosixPath(clean).name
+    parts = [part.lower() for part in PurePosixPath(clean).parts]
+    name = PurePosixPath(clean).name.lower()
     return (
         clean.startswith("/")
         or any(part in SENSITIVE_PATH_PARTS for part in parts)
         or name in SENSITIVE_FILE_NAMES
-        or name.endswith((".pem", ".key", ".p12", ".pfx"))
+        or name.endswith(SENSITIVE_FILE_EXTENSIONS)
     )
 
 
@@ -89,28 +90,48 @@ def project_path_for(resolved_path: str, project_directory: str) -> str:
     return project_relative_path
 
 
-def lexical_project_paths_for(lexical_path: str, project_directory: str) -> list[str]:
+def written_project_path_for(lexical_path: str, project_directory: str) -> str:
     real_project_directory = os.path.realpath(project_directory)
     path_parts = PurePosixPath(lexical_path).parts
     for part_count in range(1, len(path_parts) + 1):
         prefix_project_path = os.path.relpath(os.path.realpath(PurePosixPath(*path_parts[:part_count])), real_project_directory)
         if not is_outside_project(prefix_project_path):
-            return [str(PurePosixPath(prefix_project_path, *path_parts[part_count:]))]
-    return []
+            return str(PurePosixPath(prefix_project_path, *path_parts[part_count:]))
+    return lexical_path
 
 
-def entry_path_for(path: str) -> str:
-    return os.path.join(os.path.realpath(os.path.dirname(path)), os.path.basename(path))
+def touched_paths_for(path: str) -> tuple[str, str]:
+    target_path = os.path.realpath(path)
+    entry_path = os.path.normpath(os.path.join(os.path.realpath(os.path.dirname(path)), os.path.basename(path)))
+    return target_path, entry_path
 
 
-def checked_paths_for(path: str, project_directory: str) -> list[str]:
-    lexical_path = os.path.normpath(path)
-    resolved_project_paths = [
-        project_path_for(resolved_path, project_directory)
-        for spelled_path in (path, lexical_path)
-        for resolved_path in (os.path.realpath(spelled_path), entry_path_for(spelled_path))
-    ]
-    return lexical_project_paths_for(lexical_path, project_directory) + resolved_project_paths
+def is_inside_directory(path: str, directory: str) -> bool:
+    return os.path.commonpath([path, directory]) == directory
+
+
+def edited_path_denial_reason(path: str, working_directory: str, project_directory: str) -> str | None:
+    if not path:
+        return "editing without a path in the hook input is blocked"
+    if not path.isprintable():
+        return "editing a path with control characters is blocked"
+
+    joined_path = os.path.join(working_directory, path)
+    lexical_path = os.path.normpath(joined_path)
+    touched_paths = touched_paths_for(joined_path)
+    if touched_paths != touched_paths_for(lexical_path):
+        return f"editing a path that tools resolve differently through a symlink is blocked: {path}"
+
+    judged_paths = [project_path_for(touched_path, project_directory) for touched_path in touched_paths]
+    judged_paths.append(written_project_path_for(lexical_path, project_directory))
+    for judged_path in judged_paths:
+        if is_sensitive_path(judged_path):
+            return f"editing sensitive path is blocked: {judged_path}"
+
+    repository_storage = os.path.realpath(os.path.join(project_directory, ".git"))
+    if any(is_inside_directory(touched_path, repository_storage) for touched_path in touched_paths):
+        return f"editing the repository storage is blocked: {judged_paths[0]}"
+    return None
 
 
 def patch_paths(command: str) -> Iterable[str]:
@@ -131,39 +152,60 @@ def flattened_strings(value: Any) -> Iterable[str]:
             yield from flattened_strings(nested)
 
 
+def command_words_for(simple_command: str) -> list[str]:
+    try:
+        words = shlex.split(simple_command)
+    except ValueError:
+        words = simple_command.split()
+    while words and (words[0] in COMMAND_WRAPPERS or VARIABLE_ASSIGNMENT_PATTERN.fullmatch(words[0])):
+        words = words[1:]
+    return words
+
+
+def is_recursive_forced_removal(arguments: list[str]) -> bool:
+    long_options = {argument for argument in arguments if argument.startswith("--")}
+    short_flags = "".join(argument[1:] for argument in arguments if argument.startswith("-") and not argument.startswith("--"))
+    is_recursive = "--recursive" in long_options or "r" in short_flags.lower()
+    is_forced = "--force" in long_options or "f" in short_flags
+    return is_recursive and is_forced
+
+
+def simple_command_denial_reason(words: list[str]) -> str | None:
+    program = os.path.basename(words[0])
+    arguments = words[1:]
+    if program == "sudo":
+        return "sudo commands require explicit human approval outside this hook"
+    if program == "rm" and is_recursive_forced_removal(arguments):
+        return "recursive forced deletion is blocked"
+    if program in DELETING_COMMANDS and any(
+        is_sensitive_path(argument) for argument in arguments if not argument.startswith("-")
+    ):
+        return "deleting sensitive or absolute paths is blocked"
+    return None
+
+
 def bash_denial_reason(command: str) -> str | None:
     lowered = command.lower()
     for pattern, reason in DANGEROUS_COMMAND_PATTERNS:
         if pattern.search(lowered):
             return reason
 
-    try:
-        tokens = shlex.split(command)
-    except ValueError:
-        tokens = command.split()
-
-    if tokens and tokens[0] == "rm" and any(
-        token.startswith("-") and "r" in token and "f" in token for token in tokens[1:]
-    ):
-        return "recursive forced deletion is blocked"
-
-    if tokens and tokens[0] in {"rm", "unlink", "rmdir"} and any(
-        is_sensitive_path(token) for token in tokens[1:] if not token.startswith("-")
-    ):
-        return "deleting sensitive or absolute paths is blocked"
-
+    for simple_command in COMMAND_SEPARATOR_PATTERN.split(command):
+        words = command_words_for(simple_command)
+        if words:
+            reason = simple_command_denial_reason(words)
+            if reason:
+                return reason
     return None
 
 
 def edit_denial_reason(paths: Iterable[str], working_directory: str, project_directory: str) -> str | None:
-    if not os.path.isabs(working_directory):
+    if not os.path.isabs(working_directory) or not working_directory.isprintable():
         return "editing without an absolute working directory in the hook input is blocked"
     for path in paths:
-        if not path:
-            return "editing without a path in the hook input is blocked"
-        for checked_path in checked_paths_for(os.path.join(working_directory, path), project_directory):
-            if is_sensitive_path(checked_path):
-                return f"editing sensitive path is blocked: {checked_path}"
+        reason = edited_path_denial_reason(path, working_directory, project_directory)
+        if reason:
+            return reason
     return None
 
 

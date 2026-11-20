@@ -33,6 +33,8 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
 23. As a user of any of the three tools, I want the guard to judge where a path leads after symlinks, so that a symlink cannot take an edit out of the project or into `.git`, and a project opened through a symlinked path can still be edited.
 24. As a Claude Code user, I want the guard to keep working after the session changes into a folder outside the project, so that a `cd` neither blocks every tool call nor runs another repository's `run.sh`.
 25. As a Codex or opencode user, I want relative paths judged from the directory that the tool works in, so that a session started in a subfolder can edit the files of its project.
+26. As a user of any of the three tools, I want the guard to judge an edit by the files it touches, whatever the spelling of the path, so that no symlink, `..` or alias of the project lets an edit reach a sensitive file or leave the project.
+27. As a user of any of the three tools, I want every simple command in a shell command judged, so that a dangerous command after `&&`, `;`, a pipe or a line break is blocked like a dangerous command at the start.
 
 ## Implementation Decisions
 
@@ -61,7 +63,15 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
   ```
 
 - **Tool mapping to the hook payload.** Every payload has the event name `PreToolUse`, a tool name and a tool input. `shell` and `bash` map to `Bash` with the command. `patch` maps to `apply_patch` with the patch text as the command. `edit` maps to `Edit` and `write` maps to `Write`, each with the path as `file_path` as opencode sent it. Every payload carries the location directory from the plugin context as `cwd`. All other tools, including MCP tools, pass through unchecked.
-- **Path contract.** The safety hook owns the path semantics for `Edit`, `Write`, `NotebookEdit` and patch paths. `run.sh safety-hook` passes the folder that holds `run.sh` as the project directory argument. The hook resolves each path against the `cwd` of the payload in two ways, because tools differ: following symlinks before `..` as the kernel does, and collapsing `..` before following symlinks as Node and Claude Code do. It also resolves the project directory's symlinks. It also judges the path with `..` collapsed and no symlinks followed, from the first part of it that resolves into the project folder, and, in both orders, the entry itself, which is its folder with symlinks followed plus its own name, because a patch delete or move acts on the entry and not on its target. So a sensitive name such as a `.env` symlink or a `.git` folder that is a symlink is denied, while folders above the project do not count. Patch header paths are read the way Codex reads them: the patch is split on line feeds only and each line is trimmed. It judges the raw path as the tool sent it, checks a resolved path inside the project as a relative path, and denies a resolved path outside it under the existing absolute-path rule. A payload without an absolute `cwd` or without a path is denied for these tools. Shell `rm` arguments and MCP tool arguments keep the existing rule. The opencode plugin sends paths unchanged.
+- **Path contract.** The safety hook owns the path semantics for `Edit`, `Write`, `NotebookEdit` and patch paths. `run.sh safety-hook` passes the folder that holds `run.sh` as the project directory argument, and the hook joins each raw path to the absolute `cwd` of the payload. The hook judges an edit by the locations it touches, not by its spelling, under five rules:
+  1. **One meaning.** Tools resolve `..` differently: the kernel follows symlinks first, Node and Claude Code collapse `..` first. When both orders lead to different locations, the edit is denied.
+  2. **Touched locations.** An edit touches its target, the file after all symlinks, and its entry, the folder after symlinks plus its own name, which a patch delete or move acts on. Both must lie inside the project and outside the real folder that the project's `.git` points to.
+  3. **Names.** No touched location, and no part of the path as written from the first part that resolves into the project, has a sensitive name. Names compare without regard to case.
+  4. **Malformed input.** A payload without an absolute `cwd`, without a path, or with control characters in the path is denied. The hook never fails with an error on input.
+  5. **Patch headers.** Header paths are read the way Codex reads them: the patch is split on line feeds only and each line is trimmed.
+
+  MCP tool arguments keep the existing rule. The opencode plugin sends paths unchanged.
+- **Shell commands.** The hook splits a command into its simple commands at `;`, `&`, `&&`, `|`, `||`, line breaks, subshells and command substitutions. For each one it skips leading variable assignments and the wrappers `command`, `env`, `exec`, `nice`, `nohup`, `time` and `xargs`, and judges the program by its file name. It denies `sudo`, `rm` with a recursive and a forced flag in any spelling, and `rm`, `unlink` or `rmdir` of a sensitive path. The other command patterns keep matching anywhere in the command. The checks are a best effort, because a shell can hide a command in ways that no text check sees, such as `sh -c` or `eval`.
 - **Safety hook.** The hook stays the single source of the rules and stays reachable only through `run.sh safety-hook`. It moves with its tests from `.codex/hooks` to a root `hooks` folder next to `skills`, so that no tool folder depends on another. It gains a branch that checks the `file_path` of `Edit` and `Write` calls with the existing sensitive-path rule. It reuses the existing input reader and the existing patch denial path instead of adding parallel functions. The patch path reader also reads `Move to` targets. Both changes are approved by the user as security changes.
 - **rtk contract.** The plugin calls the rtk rewrite command with `--agent`, the agent name and the original command as one argument. rtk answers with JSON that holds a `command`, or with an empty object. Verified with rtk 1.2.1.
 - **Claude Code.** `.claude/settings.json` runs the safety hook for every tool (matcher `*`) with `"$CLAUDE_PROJECT_DIR/run.sh" safety-hook`, the same timeout as Codex and `onFailure: "block"`, next to the existing `rtk hook claude` hook. Claude Code runs matching hooks in parallel, and a deny takes precedence over the rtk rewrite, so a rewrite cannot hide a dangerous command from the guard.
@@ -90,6 +100,8 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
   3. `setup` fails when an option is missing or has the wrong type.
   4. The hook denies `Edit` of `.env`, `Edit` of the absolute path of the project's `.git/config`, `Write` to `/etc/hosts`, a patch that moves a file to `.git/hooks/pre-commit` and a patch that adds `../outside.md`, and allows `Write` to the absolute path of the project's `docs/GLOSSARY.md`.
   5. The hook denies `NotebookEdit` of a notebook outside the project, a `Write` through a symlink inside the project that points outside, and a payload without `cwd`. It allows a `Write` through a symlink to the project folder, and a patch that updates `../README.md` from the `docs` folder as `cwd`. The hook tests run against a real temporary project folder, because symlinks need real files.
+  6. Every spelling of an edit target gets the same decision as the plain spelling: relative, `./`, `docs/..`, from the `docs` folder, absolute, through each project symlink, through a link to `docs`, and from a `cwd` outside the project, for writes and for patch deletes.
+  7. Each simple command in a shell command is judged: `sudo` after a line break, `rm -rf` after `&&`, `rm --recursive --force`, and `rm` behind `env` or a variable assignment are denied, while pipes of harmless commands are allowed.
 
 ## Out of Scope
 
@@ -110,8 +122,6 @@ opencode is not installed on the development machine. These points come from ope
 - whether skills appear as `@skill` mentions in the prompt
 - whether opencode resolves a plugin folder without `package.json` to its `index.ts`
 - whether opencode writes cache files into `.opencode` that `.gitignore` must exclude
-
-The hook's `rm` rules only inspect the first token of a command, so `git status && rm -rf x` passes. This existing gap applies to opencode as well.
 
 The hook also ignores the shell `workdir`. This gap applies to all three tools.
 
