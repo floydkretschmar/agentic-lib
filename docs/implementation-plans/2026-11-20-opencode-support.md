@@ -252,3 +252,6 @@ Map `Edit`, `Write` and `NotebookEdit` to their path field in the hook. Resolve 
 - Implementation review after the redesign
   - [x] Codex trims patch header lines, so a padded header through a symlink and an indented header are judged as other paths than Codex writes -> parse headers like Codex: split on line feeds only and trim each line; new denied cases for a padded header through the outside symlink, an indented header and a carriage return inside a header path
   - [x] A `.git` or `.ssh` folder that is itself a symlink to a folder inside the project loses its name once the parent folder is resolved -> also judge the path with `..` collapsed and no symlinks followed, relative to the project; the test project's `.git` becomes such a symlink, plus a `.git/config` case through the project symlink. This check makes the separate entry check redundant, so it is removed
+- Implementation review after the header fix
+  - [x] Removing the entry check left a `.env` symlink unprotected when the path reaches the project through another spelling, such as a second project symlink -> the entry path is a candidate again; new denied case through a second project symlink
+  - [x] An edit payload without its path field was allowed -> deny it like a payload without `cwd`; new denied case

@@ -13,6 +13,7 @@ WORKSPACE_DIRECTORY = Path(TEMPORARY_DIRECTORY.name)
 PROJECT_DIRECTORY = WORKSPACE_DIRECTORY / ".ssh" / "project"
 OUTSIDE_DIRECTORY = WORKSPACE_DIRECTORY / "outside"
 PROJECT_LINK = WORKSPACE_DIRECTORY / "project-link"
+SECOND_PROJECT_LINK = WORKSPACE_DIRECTORY / "second-project-link"
 
 
 def setUpModule() -> None:
@@ -25,6 +26,7 @@ def setUpModule() -> None:
     (PROJECT_DIRECTORY / "repository-storage").mkdir()
     (PROJECT_DIRECTORY / ".git").symlink_to(PROJECT_DIRECTORY / "repository-storage")
     PROJECT_LINK.symlink_to(PROJECT_DIRECTORY)
+    SECOND_PROJECT_LINK.symlink_to(PROJECT_DIRECTORY)
 
 
 def tearDownModule() -> None:
@@ -109,6 +111,8 @@ class PreToolUsePolicyTest(unittest.TestCase):
             pre_tool_use("Edit", {"file_path": ".env"}),
             pre_tool_use("Edit", {"file_path": f"{PROJECT_DIRECTORY}/.git/config"}),
             pre_tool_use("Edit", {"file_path": f"{PROJECT_LINK}/.git/config"}),
+            pre_tool_use("Write", {"file_path": f"{SECOND_PROJECT_LINK}/.env"}),
+            pre_tool_use("Write", {"content": "notes"}),
             pre_tool_use("Write", {"file_path": "/etc/hosts"}),
             pre_tool_use("Write", {"file_path": f"{PROJECT_DIRECTORY}/outside-link/notes.md"}),
             pre_tool_use("Write", {"file_path": "nested-link/../../notes.md"}),
