@@ -111,3 +111,6 @@ Extend the Python hook with the `Edit`/`Write` branch and the `Move to` target. 
   - Commands depend on the opencode process working directory -> `cwd` is the project directory for both commands
   - `setup` with a wrongly typed option has no test -> second parameter in the setup test
   - The context-mode `ctx_execute` gap is undocumented -> README note
+- Implementation review
+  - [x] The README claims that the hook blocks all paths outside the project, but relative `..` paths in patches pass -> README names absolute paths and the patch gap
+  - [x] The README asks for opencode 2.3 or later, while the spec targets 2.3.x -> README says 2.3.x
