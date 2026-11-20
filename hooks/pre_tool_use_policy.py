@@ -89,22 +89,23 @@ def project_path_for(resolved_path: str, project_directory: str) -> str:
     return project_relative_path
 
 
+def lexical_project_paths_for(lexical_path: str, project_directory: str) -> list[str]:
+    real_project_directory = os.path.realpath(project_directory)
+    path_parts = PurePosixPath(lexical_path).parts
+    for part_count in range(1, len(path_parts) + 1):
+        if os.path.realpath(PurePosixPath(*path_parts[:part_count])) == real_project_directory:
+            return [str(PurePosixPath(*path_parts[part_count:]))]
+    return []
+
+
 def checked_paths_for(path: str, project_directory: str) -> list[str]:
     lexical_path = os.path.normpath(path)
-    lexical_project_paths = [
-        os.path.relpath(lexical_path, project_form)
-        for project_form in (project_directory, os.path.realpath(project_directory))
-    ]
     entry_path = os.path.join(os.path.realpath(os.path.dirname(lexical_path)), os.path.basename(lexical_path))
     resolved_project_paths = [
         project_path_for(resolved_path, project_directory)
         for resolved_path in (os.path.realpath(path), os.path.realpath(lexical_path), entry_path)
     ]
-    return [
-        lexical_project_path
-        for lexical_project_path in lexical_project_paths
-        if not is_outside_project(lexical_project_path)
-    ] + resolved_project_paths
+    return lexical_project_paths_for(lexical_path, project_directory) + resolved_project_paths
 
 
 def patch_paths(command: str) -> Iterable[str]:

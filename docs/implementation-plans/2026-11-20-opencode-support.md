@@ -255,3 +255,5 @@ Map `Edit`, `Write` and `NotebookEdit` to their path field in the hook. Resolve 
 - Implementation review after the header fix
   - [x] Removing the entry check left a `.env` symlink unprotected when the path reaches the project through another spelling, such as a second project symlink -> the entry path is a candidate again; new denied case through a second project symlink
   - [x] An edit payload without its path field was allowed -> deny it like a payload without `cwd`; new denied case
+- Manual regression test after the entry fix
+  - [x] A `.git` or `.ssh` folder that is a symlink stays unprotected when the path reaches the project through a third spelling, because the name check compares only against the given and the resolved project directory -> find the first prefix of the written path that resolves to the project and check the names after it; new denied cases through a second project symlink, through a link to `docs`, and for `..` that lands on a file symlink pointing outside
