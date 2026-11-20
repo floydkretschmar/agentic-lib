@@ -27,7 +27,7 @@ run_build() {
 }
 
 safety_hook() {
-  project_directory="$(git rev-parse --show-toplevel)"
+  project_directory="$(cd "$(dirname "$0")" && pwd)"
   python3 "$project_directory/hooks/pre_tool_use_policy.py" "$project_directory"
 }
 

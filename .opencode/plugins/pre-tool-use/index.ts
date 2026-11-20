@@ -1,5 +1,4 @@
 import { execFile } from "node:child_process"
-import { resolve } from "node:path"
 
 type ToolEvent = { tool: string; agent: string; input: Record<string, unknown> }
 
@@ -11,14 +10,14 @@ type PluginContext = {
 
 type ConfiguredCommand = { command: string[]; timeoutMilliseconds: number }
 
-type SafetyHookMapping = { hookToolName: string; inputField: string; payloadField: string; inputIsPath: boolean }
+type SafetyHookMapping = { hookToolName: string; inputField: string; payloadField: string }
 
 const safetyHookMappingByTool: Record<string, SafetyHookMapping> = {
-  shell: { hookToolName: "Bash", inputField: "command", payloadField: "command", inputIsPath: false },
-  bash: { hookToolName: "Bash", inputField: "command", payloadField: "command", inputIsPath: false },
-  patch: { hookToolName: "apply_patch", inputField: "patchText", payloadField: "command", inputIsPath: false },
-  edit: { hookToolName: "Edit", inputField: "path", payloadField: "file_path", inputIsPath: true },
-  write: { hookToolName: "Write", inputField: "path", payloadField: "file_path", inputIsPath: true },
+  shell: { hookToolName: "Bash", inputField: "command", payloadField: "command" },
+  bash: { hookToolName: "Bash", inputField: "command", payloadField: "command" },
+  patch: { hookToolName: "apply_patch", inputField: "patchText", payloadField: "command" },
+  edit: { hookToolName: "Edit", inputField: "path", payloadField: "file_path" },
+  write: { hookToolName: "Write", inputField: "path", payloadField: "file_path" },
 }
 
 function requiredCommandOption(options: Record<string, unknown>, optionName: string): string[] {
@@ -70,7 +69,7 @@ export default {
       command: requiredCommandOption(context.options, "rtkRewriteCommand"),
       timeoutMilliseconds: requiredTimeoutOption(context.options, "rtkRewriteTimeoutMilliseconds"),
     }
-    const projectDirectory = context.location.directory
+    const locationDirectory = context.location.directory
 
     await context.tool.hook("execute.before", async (event) => {
       const safetyHookMapping = safetyHookMappingByTool[event.tool]
@@ -85,12 +84,13 @@ export default {
 
       const safetyHookPayload = {
         hook_event_name: "PreToolUse",
+        cwd: locationDirectory,
         tool_name: safetyHookMapping.hookToolName,
         tool_input: {
-          [safetyHookMapping.payloadField]: safetyHookMapping.inputIsPath ? resolve(projectDirectory, inputValue) : inputValue,
+          [safetyHookMapping.payloadField]: inputValue,
         },
       }
-      const safetyHookOutput = await runCommand(safetyHook, [], JSON.stringify(safetyHookPayload), projectDirectory).catch((error: Error) => {
+      const safetyHookOutput = await runCommand(safetyHook, [], JSON.stringify(safetyHookPayload), locationDirectory).catch((error: Error) => {
         throw new Error(`safety hook failed: ${error.message}`)
       })
       if (safetyHookOutput !== "") {
@@ -101,7 +101,7 @@ export default {
         return
       }
 
-      const rewrittenCommand = await runCommand(rtkRewrite, ["--agent", event.agent, inputValue], "", projectDirectory)
+      const rewrittenCommand = await runCommand(rtkRewrite, ["--agent", event.agent, inputValue], "", locationDirectory)
         .then((rtkOutput) => JSON.parse(rtkOutput).command)
         .catch(() => undefined)
       if (typeof rewrittenCommand === "string" && rewrittenCommand !== "") {

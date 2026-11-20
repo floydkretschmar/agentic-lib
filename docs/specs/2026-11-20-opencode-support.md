@@ -29,6 +29,10 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
 19. As a Claude Code user, I want edits to project files allowed although Claude Code passes absolute paths, so that the guard does not block normal work.
 20. As a Claude Code user, I want a tool call blocked when the safety hook fails, times out or returns unreadable output, so that a broken guard never lets a call through.
 21. As a Codex user, I want patches that leave the project through a relative `..` path blocked, and patches with an absolute path inside the project allowed, so that the guard judges where a patch writes and not how its path is spelled.
+22. As a Claude Code user, I want `NotebookEdit` calls checked like `Edit` and `Write`, so that a notebook edit cannot reach a sensitive path.
+23. As a user of any of the three tools, I want the guard to judge where a path leads after symlinks, so that a symlink cannot take an edit out of the project or into `.git`, and a project opened through a symlinked path can still be edited.
+24. As a Claude Code user, I want the guard to keep working after the session changes into a folder outside the project, so that a `cd` neither blocks every tool call nor runs another repository's `run.sh`.
+25. As a Codex or opencode user, I want relative paths judged from the directory that the tool works in, so that a session started in a subfolder can edit the files of its project.
 
 ## Implementation Decisions
 
@@ -44,9 +48,6 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
        read input field (missing => block)
                     │
                     v
-       edit/write: resolve path against the project directory
-                    │
-                    v
        safety hook ──deny / error / timeout / bad output──> block with reason
                     │ allow
                     v
@@ -59,11 +60,11 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
        run rewritten command
   ```
 
-- **Tool mapping to the hook payload.** Every payload has the event name `PreToolUse`, a tool name and a tool input. `shell` and `bash` map to `Bash` with the command. `patch` maps to `apply_patch` with the patch text as the command. `edit` maps to `Edit` and `write` maps to `Write`, each with the normalized path as `file_path`. All other tools, including MCP tools, pass through unchecked.
-- **Path contract.** The safety hook owns the path semantics for `Edit`, `Write` and patch paths. `run.sh safety-hook` passes the git top level as the project directory argument. The hook resolves each path against it, checks a path inside the project as a relative path, and denies a path outside it under the existing absolute-path rule. Shell `rm` arguments and MCP tool arguments keep the existing rule. The opencode plugin resolves an opencode path against the project directory from the plugin context and sends the absolute path.
+- **Tool mapping to the hook payload.** Every payload has the event name `PreToolUse`, a tool name and a tool input. `shell` and `bash` map to `Bash` with the command. `patch` maps to `apply_patch` with the patch text as the command. `edit` maps to `Edit` and `write` maps to `Write`, each with the path as `file_path` as opencode sent it. Every payload carries the location directory from the plugin context as `cwd`. All other tools, including MCP tools, pass through unchecked.
+- **Path contract.** The safety hook owns the path semantics for `Edit`, `Write`, `NotebookEdit` and patch paths. `run.sh safety-hook` passes the folder that holds `run.sh` as the project directory argument. The hook resolves each path against the `cwd` of the payload and follows symlinks in the path and in the project directory. It checks a path inside the project as a relative path, and denies a path outside it under the existing absolute-path rule. A payload without `cwd` is denied for these tools. Shell `rm` arguments and MCP tool arguments keep the existing rule. The opencode plugin sends paths unchanged.
 - **Safety hook.** The hook stays the single source of the rules and stays reachable only through `run.sh safety-hook`. It moves with its tests from `.codex/hooks` to a root `hooks` folder next to `skills`, so that no tool folder depends on another. It gains a branch that checks the `file_path` of `Edit` and `Write` calls with the existing sensitive-path rule. It reuses the existing input reader and the existing patch denial path instead of adding parallel functions. The patch path reader also reads `Move to` targets. Both changes are approved by the user as security changes.
 - **rtk contract.** The plugin calls the rtk rewrite command with `--agent`, the agent name and the original command as one argument. rtk answers with JSON that holds a `command`, or with an empty object. Verified with rtk 1.2.1.
-- **Claude Code.** `.claude/settings.json` runs the safety hook for every tool (matcher `*`) with the same command and timeout as Codex and with `onFailure: "block"`, next to the existing `rtk hook claude` hook. Claude Code runs matching hooks in parallel, and a deny takes precedence over the rtk rewrite, so a rewrite cannot hide a dangerous command from the guard.
+- **Claude Code.** `.claude/settings.json` runs the safety hook for every tool (matcher `*`) with `"$CLAUDE_PROJECT_DIR/run.sh" safety-hook`, the same timeout as Codex and `onFailure: "block"`, next to the existing `rtk hook claude` hook. Claude Code runs matching hooks in parallel, and a deny takes precedence over the rtk rewrite, so a rewrite cannot hide a dangerous command from the guard.
 - **Subagents.** Five V2 agent files with mode `subagent`, a permission rule that denies the `edit` action for every resource, and the same prompt body as the Claude Code agent. Models: architect `anthropic/claude-fable-5-2#high`; qa and review `anthropic/claude-opus-5-5#high`; codebase researcher and web researcher `anthropic/claude-opus-5-5#medium`.
 - **Skills.** A `.opencode/skills` symlink to the shared skills folder, in the same way as the existing Claude Code and Codex symlinks. It gives the project skills a higher precedence than global opencode skills and does not depend on opencode's Claude compatibility settings.
 - **run.sh.** It runs only what every project has. `test` runs the hook tests, and `setup-environment` checks that rtk is installed. It does not run the opencode plugin tests or check tool-specific rtk subcommands. The README names `node --test .opencode/plugins/pre-tool-use/pre-tool-use.test.ts` for the plugin tests.
@@ -88,6 +89,7 @@ The repository ships an opencode V2 configuration next to the Claude Code and Co
   2. The plugin allows: `shell` with `git status` as agent `build`, rewritten to the rtk stub's answer; `edit` of the absolute path of a project file, unchanged; `read` of `.env`, unchanged; `shell` with `git status` when the rtk stub fails or answers `{}`, unchanged.
   3. `setup` fails when an option is missing or has the wrong type.
   4. The hook denies `Edit` of `.env`, `Edit` of the absolute path of the project's `.git/config`, `Write` to `/etc/hosts`, a patch that moves a file to `.git/hooks/pre-commit` and a patch that adds `../outside.md`, and allows `Write` to the absolute path of the project's `docs/GLOSSARY.md`.
+  5. The hook denies `NotebookEdit` of a notebook outside the project, a `Write` through a symlink inside the project that points outside, and a payload without `cwd`. It allows a `Write` through a symlink to the project folder, and a patch that updates `../README.md` from the `docs` folder as `cwd`. The hook tests run against a real temporary project folder, because symlinks need real files.
 
 ## Out of Scope
 
@@ -111,6 +113,6 @@ opencode is not installed on the development machine. These points come from ope
 
 The hook's `rm` rules only inspect the first token of a command, so `git status && rm -rf x` passes. This existing gap applies to opencode as well.
 
-The hook also ignores the shell `workdir`, and it judges paths by their text, so a symlink inside the project that points outside lets an edit leave the project. Both gaps apply to all three tools.
+The hook also ignores the shell `workdir`. This gap applies to all three tools.
 
 In Claude Code, the `Write` and `Edit` tools can no longer write outside the project, for example to the session scratchpad or to `~/.claude/plans`. Shell commands still can.

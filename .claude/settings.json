@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$(git rev-parse --show-toplevel)/run.sh\" safety-hook",
+            "command": "\"$CLAUDE_PROJECT_DIR/run.sh\" safety-hook",
             "timeout": 5,
             "onFailure": "block",
             "statusMessage": "Dangerous tool-use guard"

@@ -147,6 +147,46 @@ Move `.codex/hooks/pre_tool_use_policy.py` and its test to `hooks/` and point `r
 - [x] In a scratch copy without `.codex` and `.opencode`, `./run.sh test` passes and `./run.sh safety-hook` denies `sudo -n true`.
 - [x] In the running Claude Code session, `sudo -n true` is denied and an `Edit` of a project file succeeds after the move.
 
+---
+
+## Phase 4: Path decisions from the final review
+
+**User stories**: 22–25
+
+### What to build
+The hook checks `NotebookEdit`, follows symlinks, and resolves relative paths against the `cwd` that each tool sends. The opencode plugin sends its location directory as `cwd` and drops its own path resolution. `run.sh safety-hook` takes the project directory from its own location, and Claude Code calls it through `$CLAUDE_PROJECT_DIR`.
+
+#### Step 4.1: Write failing test
+- `test_pre_tool_use_policy.py` (existing tests, new parameters; the project directory becomes a real temporary folder with a symlink to an outside folder and a symlink to the project)
+    - Denied edit targets
+        - `NotebookEdit {notebook_path: "<outside>/notes.ipynb"}` -> deny
+        - `Write {file_path: "<project>/outside-link/notes.md"}` -> deny
+        - Unhappy path: `Write` with a payload that has no `cwd` -> deny
+    - Allowed edit targets
+        - The absolute `Write` case goes through the symlink to the project -> allow
+        - `apply_patch` updating `../README.md` with `cwd` `<project>/docs` -> allow
+- `pre-tool-use.test.ts`: no new cases. The existing `docs` case covers the plugin's `cwd`.
+
+**Run:** `./run.sh test` and `node --test .opencode/plugins/pre-tool-use/pre-tool-use.test.ts`
+**Expect:** FAIL (red)
+
+#### Step 4.2: Implement minimal code
+Map `Edit`, `Write` and `NotebookEdit` to their path field in the hook. Resolve paths against the payload `cwd` with `os.path.realpath` for the path and the project directory, and deny an edit payload without `cwd`. Send `cwd` from the plugin and remove its `resolve`. Take the project directory in `run.sh safety-hook` from the folder of `run.sh`, and call `"$CLAUDE_PROJECT_DIR/run.sh" safety-hook` from `.claude/settings.json`. Apply the hook and `run.sh` changes in one step, because the live Claude Code hook fails closed.
+
+#### Step 4.3: Verify test passes
+**Run:** `./run.sh test` and `node --test .opencode/plugins/pre-tool-use/pre-tool-use.test.ts`
+**Expect:** PASS (green)
+
+#### Step 4.4: Aggressive refactor
+- Plugin: no path logic and no `inputIsPath` flag.
+- Hook: one path function with one purpose.
+
+### Acceptance criteria
+- [x] `./run.sh lint`, `./run.sh test`, `./run.sh build` and the plugin tests pass.
+- [x] Each new test fails once when its production line is broken.
+- [x] In the running Claude Code session, `sudo -n true` is denied and an `Edit` of a project file succeeds.
+- [x] The Claude Code hook command works from a folder outside the repository.
+
 # Manual verification
 1. Install opencode 2.3.x and run `./run.sh setup-environment`. It reports that rtk is available.
 2. Start opencode in the repository and run `opencode plugin list`. It lists `pre-tool-use` once, loaded without errors. Stop here and report if `pre-tool-use` is missing or listed twice.
@@ -175,6 +215,10 @@ Move `.codex/hooks/pre_tool_use_policy.py` and its test to `hooks/` and point `r
 - [x] Step 3.2
 - [x] Step 3.3
 - [x] Step 3.4
+- [x] Step 4.1
+- [x] Step 4.2
+- [x] Step 4.3
+- [x] Step 4.4
 
 # Review findings:
 - Step 1

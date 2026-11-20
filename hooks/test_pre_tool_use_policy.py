@@ -2,22 +2,39 @@
 import json
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 
 HOOK = Path(__file__).with_name("pre_tool_use_policy.py")
-PROJECT_DIRECTORY = "/workspace/project"
+TEMPORARY_DIRECTORY = tempfile.TemporaryDirectory()
+WORKSPACE_DIRECTORY = Path(TEMPORARY_DIRECTORY.name)
+PROJECT_DIRECTORY = WORKSPACE_DIRECTORY / "project"
+OUTSIDE_DIRECTORY = WORKSPACE_DIRECTORY / "outside"
+PROJECT_LINK = WORKSPACE_DIRECTORY / "project-link"
+
+
+def setUpModule() -> None:
+    (PROJECT_DIRECTORY / "docs").mkdir(parents=True)
+    OUTSIDE_DIRECTORY.mkdir()
+    (PROJECT_DIRECTORY / "outside-link").symlink_to(OUTSIDE_DIRECTORY)
+    PROJECT_LINK.symlink_to(PROJECT_DIRECTORY)
+
+
+def tearDownModule() -> None:
+    TEMPORARY_DIRECTORY.cleanup()
 
 
 def run_hook(payload: str | dict) -> subprocess.CompletedProcess[str]:
     stdin = json.dumps(payload) if isinstance(payload, dict) else payload
     return subprocess.run(
-        [sys.executable, str(HOOK), PROJECT_DIRECTORY],
+        [sys.executable, str(HOOK), str(PROJECT_LINK)],
         input=stdin,
         text=True,
         capture_output=True,
         check=False,
+        cwd=PROJECT_DIRECTORY,
     )
 
 
@@ -25,7 +42,7 @@ def pre_tool_use(tool_name: str, tool_input: dict) -> dict:
     return {
         "session_id": "test",
         "transcript_path": None,
-        "cwd": str(Path.cwd()),
+        "cwd": str(PROJECT_DIRECTORY),
         "hook_event_name": "PreToolUse",
         "model": "test-model",
         "turn_id": "test-turn",
@@ -33,6 +50,14 @@ def pre_tool_use(tool_name: str, tool_input: dict) -> dict:
         "tool_use_id": "test-tool-use",
         "tool_input": tool_input,
     }
+
+
+def with_working_directory(payload: dict, working_directory: str) -> dict:
+    return {**payload, "cwd": working_directory}
+
+
+def without_working_directory(payload: dict) -> dict:
+    return {field_name: value for field_name, value in payload.items() if field_name != "cwd"}
 
 
 class PreToolUsePolicyTest(unittest.TestCase):
@@ -62,9 +87,9 @@ class PreToolUsePolicyTest(unittest.TestCase):
         self.assertEqual(result.stdout, "")
 
     def test_denies_sensitive_edit_targets(self) -> None:
-        for tool_name, tool_input in (
-            ("apply_patch", {"command": "*** Begin Patch\n*** Delete File: .git/config\n*** End Patch\n"}),
-            (
+        for payload in (
+            pre_tool_use("apply_patch", {"command": "*** Begin Patch\n*** Delete File: .git/config\n*** End Patch\n"}),
+            pre_tool_use(
                 "apply_patch",
                 {
                     "command": (
@@ -75,17 +100,20 @@ class PreToolUsePolicyTest(unittest.TestCase):
                     )
                 },
             ),
-            ("apply_patch", {"command": "*** Begin Patch\n*** Add File: ../outside.md\n*** End Patch\n"}),
-            ("Edit", {"file_path": ".env"}),
-            ("Edit", {"file_path": f"{PROJECT_DIRECTORY}/.git/config"}),
-            ("Write", {"file_path": "/etc/hosts"}),
+            pre_tool_use("apply_patch", {"command": "*** Begin Patch\n*** Add File: ../outside.md\n*** End Patch\n"}),
+            pre_tool_use("Edit", {"file_path": ".env"}),
+            pre_tool_use("Edit", {"file_path": f"{PROJECT_DIRECTORY}/.git/config"}),
+            pre_tool_use("Write", {"file_path": "/etc/hosts"}),
+            pre_tool_use("Write", {"file_path": f"{PROJECT_DIRECTORY}/outside-link/notes.md"}),
+            pre_tool_use("NotebookEdit", {"notebook_path": f"{OUTSIDE_DIRECTORY}/notes.ipynb"}),
+            without_working_directory(pre_tool_use("Write", {"file_path": "docs/notes.md"})),
         ):
-            with self.subTest(tool_name=tool_name, tool_input=tool_input):
-                self.assert_denied(run_hook(pre_tool_use(tool_name, tool_input)))
+            with self.subTest(payload=payload):
+                self.assert_denied(run_hook(payload))
 
     def test_allows_ordinary_edit_targets(self) -> None:
-        for tool_name, tool_input in (
-            (
+        for payload in (
+            pre_tool_use(
                 "apply_patch",
                 {
                     "command": (
@@ -100,10 +128,14 @@ class PreToolUsePolicyTest(unittest.TestCase):
                     )
                 },
             ),
-            ("Write", {"file_path": f"{PROJECT_DIRECTORY}/docs/GLOSSARY.md"}),
+            with_working_directory(
+                pre_tool_use("apply_patch", {"command": "*** Begin Patch\n*** Update File: ../README.md\n*** End Patch\n"}),
+                f"{PROJECT_DIRECTORY}/docs",
+            ),
+            pre_tool_use("Write", {"file_path": f"{PROJECT_LINK}/docs/GLOSSARY.md"}),
         ):
-            with self.subTest(tool_name=tool_name, tool_input=tool_input):
-                result = run_hook(pre_tool_use(tool_name, tool_input))
+            with self.subTest(payload=payload):
+                result = run_hook(payload)
 
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stdout, "")

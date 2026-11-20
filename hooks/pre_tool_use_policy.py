@@ -29,6 +29,7 @@ DANGEROUS_COMMAND_PATTERNS = (
     ),
 )
 
+EDIT_PATH_FIELD_BY_TOOL = {"Edit": "file_path", "Write": "file_path", "NotebookEdit": "notebook_path"}
 SENSITIVE_PATH_PARTS = {".git", ".ssh"}
 SENSITIVE_FILE_NAMES = {".env", ".env.local", ".env.production", "id_rsa", "id_ed25519"}
 
@@ -77,11 +78,11 @@ def is_sensitive_path(path: str) -> bool:
     )
 
 
-def project_path_for(path: str, project_directory: str) -> str:
-    absolute_path = os.path.normpath(os.path.join(project_directory, path.strip().strip("\"'")))
-    project_relative_path = os.path.relpath(absolute_path, project_directory)
+def project_path_for(path: str, working_directory: str, project_directory: str) -> str:
+    real_path = os.path.realpath(os.path.join(working_directory, path.strip().strip("\"'")))
+    project_relative_path = os.path.relpath(real_path, os.path.realpath(project_directory))
     if project_relative_path == ".." or project_relative_path.startswith("../"):
-        return absolute_path
+        return real_path
     return project_relative_path
 
 
@@ -127,9 +128,11 @@ def bash_denial_reason(command: str) -> str | None:
     return None
 
 
-def edit_denial_reason(paths: Iterable[str], project_directory: str) -> str | None:
+def edit_denial_reason(paths: Iterable[str], working_directory: str, project_directory: str) -> str | None:
+    if not working_directory:
+        return "editing without a working directory in the hook input is blocked"
     for path in paths:
-        project_path = project_path_for(path, project_directory)
+        project_path = project_path_for(path, working_directory, project_directory)
         if is_sensitive_path(project_path):
             return f"editing sensitive path is blocked: {project_path}"
     return None
@@ -160,14 +163,16 @@ def main() -> int:
 
     tool_name = str(payload.get("tool_name", ""))
     tool_input = payload.get("tool_input")
+    working_directory = string_field_from(payload, "cwd")
 
     reason = None
     if tool_name == "Bash":
         reason = bash_denial_reason(string_field_from(tool_input, "command"))
     elif tool_name == "apply_patch":
-        reason = edit_denial_reason(patch_paths(string_field_from(tool_input, "command")), project_directory)
-    elif tool_name in {"Edit", "Write"}:
-        reason = edit_denial_reason([string_field_from(tool_input, "file_path")], project_directory)
+        reason = edit_denial_reason(patch_paths(string_field_from(tool_input, "command")), working_directory, project_directory)
+    elif tool_name in EDIT_PATH_FIELD_BY_TOOL:
+        edited_path = string_field_from(tool_input, EDIT_PATH_FIELD_BY_TOOL[tool_name])
+        reason = edit_denial_reason([edited_path], working_directory, project_directory)
     elif tool_name.startswith("mcp__"):
         reason = mcp_denial_reason(tool_name, tool_input)
 
