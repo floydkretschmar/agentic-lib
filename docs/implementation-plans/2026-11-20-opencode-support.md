@@ -262,3 +262,5 @@ Map `Edit`, `Write` and `NotebookEdit` to their path field in the hook. Resolve 
 - Implementation review and manual regression test after the prefix extension
   - [x] Removing the entry check let patch deletes and moves of a symlink entry through, such as a symlink to the project or a dotfile link outside it, because both resolved paths land on the in-project target -> restore the entry check; new denied case that deletes the project symlink
   - [x] A relative `cwd` is resolved against the hook process's folder -> deny an edit payload whose `cwd` is not absolute, which also covers a missing `cwd`; new denied case with a relative `cwd`
+- Implementation review after the entry restore
+  - [x] The entry check uses only the `..`-first spelling, so a patch delete through a project symlink and `..` can unlink a symlink outside the project in the kernel order -> build the entry from the raw and the `..`-first spelling; new denied case that deletes `outside-link/../project-link`

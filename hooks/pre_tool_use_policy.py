@@ -99,12 +99,16 @@ def lexical_project_paths_for(lexical_path: str, project_directory: str) -> list
     return []
 
 
+def entry_path_for(path: str) -> str:
+    return os.path.join(os.path.realpath(os.path.dirname(path)), os.path.basename(path))
+
+
 def checked_paths_for(path: str, project_directory: str) -> list[str]:
     lexical_path = os.path.normpath(path)
-    entry_path = os.path.join(os.path.realpath(os.path.dirname(lexical_path)), os.path.basename(lexical_path))
     resolved_project_paths = [
         project_path_for(resolved_path, project_directory)
-        for resolved_path in (os.path.realpath(path), os.path.realpath(lexical_path), entry_path)
+        for spelled_path in (path, lexical_path)
+        for resolved_path in (os.path.realpath(spelled_path), entry_path_for(spelled_path))
     ]
     return lexical_project_paths_for(lexical_path, project_directory) + resolved_project_paths
 

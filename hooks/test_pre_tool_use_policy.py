@@ -137,6 +137,7 @@ class PreToolUsePolicyTest(unittest.TestCase):
             without_working_directory(pre_tool_use("Write", {"file_path": "docs/notes.md"})),
             with_working_directory(pre_tool_use("Write", {"file_path": "notes.md"}), "docs"),
             pre_tool_use("apply_patch", {"command": f"*** Begin Patch\n*** Delete File: {PROJECT_LINK}\n*** End Patch\n"}),
+            pre_tool_use("apply_patch", {"command": "*** Begin Patch\n*** Delete File: outside-link/../project-link\n*** End Patch\n"}),
         ):
             with self.subTest(payload=payload):
                 self.assert_denied(run_hook(payload))
