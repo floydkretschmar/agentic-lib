@@ -54,9 +54,9 @@ def load_payload() -> dict[str, Any] | None:
     return payload if isinstance(payload, dict) else None
 
 
-def command_from(tool_input: Any) -> str:
-    if isinstance(tool_input, dict) and isinstance(tool_input.get("command"), str):
-        return tool_input["command"]
+def string_field_from(tool_input: Any, field_name: str) -> str:
+    if isinstance(tool_input, dict) and isinstance(tool_input.get(field_name), str):
+        return tool_input[field_name]
     return ""
 
 
@@ -77,7 +77,7 @@ def is_sensitive_path(path: str) -> bool:
 
 def patch_paths(command: str) -> Iterable[str]:
     for line in command.splitlines():
-        match = re.match(r"\*\*\* (Add|Delete|Update) File: (.+)$", line)
+        match = re.match(r"\*\*\* (Add File|Delete File|Update File|Move to): (.+)$", line)
         if match:
             yield match.group(2)
 
@@ -117,8 +117,8 @@ def bash_denial_reason(command: str) -> str | None:
     return None
 
 
-def apply_patch_denial_reason(command: str) -> str | None:
-    for path in patch_paths(command):
+def edit_denial_reason(paths: Iterable[str]) -> str | None:
+    for path in paths:
         if is_sensitive_path(path):
             return f"editing sensitive path is blocked: {path}"
     return None
@@ -145,13 +145,14 @@ def main() -> int:
 
     tool_name = str(payload.get("tool_name", ""))
     tool_input = payload.get("tool_input")
-    command = command_from(tool_input)
 
     reason = None
     if tool_name == "Bash":
-        reason = bash_denial_reason(command)
+        reason = bash_denial_reason(string_field_from(tool_input, "command"))
     elif tool_name == "apply_patch":
-        reason = apply_patch_denial_reason(command)
+        reason = edit_denial_reason(patch_paths(string_field_from(tool_input, "command")))
+    elif tool_name in {"Edit", "Write"}:
+        reason = edit_denial_reason([string_field_from(tool_input, "file_path")])
     elif tool_name.startswith("mcp__"):
         reason = mcp_denial_reason(tool_name, tool_input)
 

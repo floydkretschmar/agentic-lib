@@ -60,23 +60,47 @@ class PreToolUsePolicyTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "")
 
-    def test_denies_sensitive_apply_patch_targets(self) -> None:
-        patch = "*** Begin Patch\n*** Delete File: .git/config\n*** End Patch\n"
+    def test_denies_sensitive_edit_targets(self) -> None:
+        for tool_name, tool_input in (
+            ("apply_patch", {"command": "*** Begin Patch\n*** Delete File: .git/config\n*** End Patch\n"}),
+            (
+                "apply_patch",
+                {
+                    "command": (
+                        "*** Begin Patch\n"
+                        "*** Update File: notes.md\n"
+                        "*** Move to: .git/hooks/pre-commit\n"
+                        "*** End Patch\n"
+                    )
+                },
+            ),
+            ("Edit", {"file_path": ".env"}),
+            ("Write", {"file_path": "/etc/hosts"}),
+        ):
+            with self.subTest(tool_name=tool_name, tool_input=tool_input):
+                self.assert_denied(run_hook(pre_tool_use(tool_name, tool_input)))
 
-        self.assert_denied(run_hook(pre_tool_use("apply_patch", {"command": patch})))
+    def test_allows_ordinary_edit_targets(self) -> None:
+        for tool_name, tool_input in (
+            (
+                "apply_patch",
+                {
+                    "command": (
+                        "*** Begin Patch\n"
+                        "*** Update File: docs/GLOSSARY.md\n"
+                        "@@\n"
+                        "+Project notes\n"
+                        "*** End Patch\n"
+                    )
+                },
+            ),
+            ("Write", {"file_path": "docs/GLOSSARY.md"}),
+        ):
+            with self.subTest(tool_name=tool_name, tool_input=tool_input):
+                result = run_hook(pre_tool_use(tool_name, tool_input))
 
-    def test_allows_ordinary_apply_patch_targets(self) -> None:
-        patch = (
-            "*** Begin Patch\n"
-            "*** Update File: docs/GLOSSARY.md\n"
-            "@@\n"
-            "+Project notes\n"
-            "*** End Patch\n"
-        )
-        result = run_hook(pre_tool_use("apply_patch", {"command": patch}))
-
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout, "")
 
     def test_malformed_input_fails_closed(self) -> None:
         self.assert_denied(run_hook("{not-json"))

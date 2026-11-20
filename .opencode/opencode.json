@@ -1,0 +1,14 @@
+{
+  "plugins": [
+    {
+      "package": "./plugins/pre-tool-use",
+      "options": {
+        "safetyHookCommand": ["sh", "-c", "\"$(git rev-parse --show-toplevel)/run.sh\" safety-hook"],
+        "safetyHookTimeoutMilliseconds": 5000,
+        "rtkRewriteCommand": ["rtk", "hook", "opencode"],
+        "rtkRewriteTimeoutMilliseconds": 3000
+      }
+    },
+    "context-mode"
+  ]
+}

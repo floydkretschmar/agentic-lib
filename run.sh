@@ -6,6 +6,7 @@ run_test() {
   #   run package-manager test
   #   run package-manager typecheck
   python3 -m unittest discover --start-directory "$(git rev-parse --show-toplevel)/.codex/hooks" --pattern 'test_*.py'
+  node --test "$(git rev-parse --show-toplevel)/.opencode/plugins/pre-tool-use/pre-tool-use.test.ts"
 }
 
 run_lint() {
@@ -31,7 +32,7 @@ safety_hook() {
 }
 
 setup_environment() {
-  if rtk hook codex --help >/dev/null 2>&1; then
+  if rtk hook codex --help >/dev/null 2>&1 && rtk hook opencode --help >/dev/null 2>&1; then
     echo "rtk already available"
   else
     echo "Install or upgrade rtk: https://www.rtk-ai.app/docs/getting-started/installation/" >&2
